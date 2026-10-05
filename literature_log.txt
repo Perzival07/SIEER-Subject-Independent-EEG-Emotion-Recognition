@@ -1,0 +1,564 @@
+LITERATURE LOG -- D:/EEG/papers_EEG/
+Reconstructed attribution log for the 32-paper literature review referenced
+throughout DEAP_Comparative_Analysis.ipynb (Sections 16-18) and the
+scripts/track_a_*.py / scripts/track_b_*.py docstrings.
+
+RECONSTRUCTION NOTE (read this first)
+--------------------------------------
+This file did not exist anywhere in the project despite being referenced by
+name at least eight times, in the notebook's own markdown and in nearly
+every Section-16/17 companion script's docstring, as containing "full
+attribution -- what was taken from each paper, why it was or wasn't used,
+and how it maps to the scripts." It was reconstructed after the fact by:
+  1. Extracting each script's own explicit citation (paper + reason) from
+     its docstring -- this is authoritative, not inferred.
+  2. Opening the actual PDF of all 32 papers in papers_EEG/ (title, authors,
+     abstract, and opening paragraphs) and writing a genuine one-paragraph
+     summary of each from that real text -- not from the filename alone.
+  3. Honestly marking which papers map to an implemented experiment
+     ("USED") and which were part of the review corpus but never became
+     code ("REVIEWED, NOT IMPLEMENTED"), with a stated reason in both cases.
+
+Of 32 papers, 13 have an explicit, code-level attribution. The remaining 19
+were reviewed (their abstracts genuinely inform the summaries below) but do
+not map to any implemented script or notebook cell. Where a topical link to
+this project is plausible, it is stated as inferred, not claimed as fact.
+
+==============================================================================
+PART A -- PAPERS WITH AN EXPLICIT, CODE-LEVEL ATTRIBUTION (13)
+==============================================================================
+
+------------------------------------------------------------------------------
+1. The Role of Review Process Failures in Affective State Estimation: An
+   Empirical Investigation of DEAP Dataset
+   Khan, Sweet, Harvey, Knapp, Krusienski, Thompson (Kansas State / VCU)
+------------------------------------------------------------------------------
+SUMMARY: Reviews 101 published studies using DEAP and finds ~87% contain at
+least one methodological flaw (data leakage from improper segmentation,
+biased feature selection, flawed hyperparameter optimization, neglect of
+class imbalance, insufficient reporting). Experimentally demonstrates these
+flaws can inflate reported accuracy by up to 46%.
+
+USED IN: Section 16.1, scripts/track_a_significance_test.py.
+WHY: This is the single most load-bearing citation in the whole project. It
+is the direct empirical justification for building a genuine permutation-
+based null distribution for this project's own (already-correct)
+GroupKFold protocol, rather than simply eyeballing "AUC looks near 0.5."
+It is also the source of the project's central comparative claim in
+Section 13 -- that this repo's ~0.45-0.56 AUC vs. the source MethodsX
+paper's 0.97 AUC is best explained by leaky evaluation on the latter's side,
+not a modeling advantage.
+
+------------------------------------------------------------------------------
+2. Domain Adaptation and Generalization on Functional Medical Images: A
+   Systematic Survey
+   Sarafraz, Behnamnia, Hosseinzadeh, Balapour, Meghrazi, Rabiee
+   (Sharif University of Technology)
+------------------------------------------------------------------------------
+SUMMARY: First systematic survey of domain generalization (DG) and domain
+adaptation (DA) methods specifically for functional brain signals/medical
+imaging, covering datasets, approaches, and architectures under
+distribution shift, with a taxonomy of DA/DG technique families.
+
+USED IN: Section 16.2 (CORAL, track_a_domain_alignment.py), Section 17.1
+(Euclidean Alignment, track_a_riemannian_alignment.py), Section 16.3 (DANN,
+track_b_domain_adversarial.py).
+WHY: The general DA/DG taxonomy this survey provides is what identified
+CORAL, Euclidean Alignment, and adversarial subject-invariance as the three
+standard, well-established remedies for exactly this project's
+subject-independent generalization gap -- it is the umbrella source for all
+three literature-driven interventions in Sections 16-17.
+
+------------------------------------------------------------------------------
+3. DS-AGC: Semi-Supervised Dual-Stream Self-Attentive Adversarial Graph
+   Contrastive Learning for Cross-Subject EEG-based Emotion Recognition
+   Ye, Zhang, Teng, Zhang, Wang, Ni, Li, Xu, Liang (Shenzhen University /
+   Harbin Institute of Technology)
+------------------------------------------------------------------------------
+SUMMARY: Proposes a dual-stream (non-structural + graph-structural) semi-
+supervised framework for cross-subject EEG emotion recognition, evaluated
+with leave-one-subject-out cross-validation on SEED, SEED-IV, and SEED-V
+under varying labeled-data fractions; reports a 2.17% average improvement
+over prior semi-supervised baselines.
+
+USED IN: Section 16.2 (CORAL) and Section 17.1 (Euclidean Alignment).
+WHY: DS-AGC's own baseline comparison table is cited in this project's
+scripts as the concrete empirical precedent for testing CORAL: it reports
+plain CORAL reaching ~65-70% under LOSO on SEED where untransformed
+features (KNN/GFK/KPCA) stay under 60%. That specific number is what
+motivated testing CORAL and EA here -- though this project's own CORAL
+result (mean AUC delta +0.0059) did not replicate that scale of gain,
+which is reported honestly in Section 16.2 rather than omitted.
+
+------------------------------------------------------------------------------
+4. PARSE: Pairwise Alignment of Representations in Semi-Supervised EEG
+   Learning for Emotion Recognition
+   Zhang, Davoodnia, Etemad (Queen's University)
+------------------------------------------------------------------------------
+SUMMARY: A semi-supervised architecture that reduces distribution mismatch
+between abundant unlabeled and scarce labeled EEG data via data
+augmentation, label guessing/sharpening, and pairwise representation
+alignment; evaluated on SEED, SEED-IV, SEED-V, and AMIGOS.
+
+USED IN: Section 16.3, scripts/track_b_domain_adversarial.py.
+WHY: One of six independently-converging sources (alongside #5, #2, #3,
+#6/#15, and #7 below) that this project's literature review found all
+recommending representation-alignment / subject-invariance techniques for
+EEG emotion recognition -- cited as part of the case for testing DANN,
+not for its own pairwise-alignment mechanism specifically (which was not
+itself implemented).
+
+------------------------------------------------------------------------------
+5. EEG Based Emotion Recognition: A Tutorial and Review
+   Li, Zhang, Tiwari, Song, Hu, Yang, Zhao, Kumar, Marttinen
+   (multi-institution: Qilu Univ. of Tech. / Aalto / BIT / Thapar)
+------------------------------------------------------------------------------
+SUMMARY: A broad tutorial-style review covering the psychological/
+physiological basis of EEG emotion recognition and categorizing the field's
+technical routes end to end, aimed at researchers new to the area.
+
+USED IN: Section 16.3, scripts/track_b_domain_adversarial.py.
+WHY: One of the six sources whose collective, independent convergence on
+gradient-reversal-layer domain-adversarial training justified implementing
+DANN in this project.
+
+------------------------------------------------------------------------------
+6. Graph Neural Networks in EEG-based Emotion Recognition: A Survey
+   Liu, Deng, Wu, Yang, Wang, Zhang, Chen, Zhang, Liu, Ding, Zhai, Jia, Zhou
+   (Nanyang Technological University et al.)
+------------------------------------------------------------------------------
+SUMMARY: Surveys GNN methods for EEG emotion recognition through a unified
+graph-construction framework (three stages: node definition, edge/graph
+construction, GNN backbone), and discusses open challenges such as
+temporal fully-connected graphs and graph condensation.
+
+USED IN: Section 16.3, scripts/track_b_domain_adversarial.py ("the GNN
+survey" reference).
+WHY: One of the six converging DANN-motivating sources. Note: paper #15
+below ("A Comprehensive Survey on EEG-Based Emotion Recognition: A
+Graph-Based Perspective") shares several authors and covers closely
+overlapping ground; this project's own citation says only "the GNN
+survey" without disambiguating between the two, so #15 should be treated
+as a plausible co-contributor to the same citation rather than a separate,
+independently-used source.
+
+------------------------------------------------------------------------------
+7. Deep Learning-Based EEG Emotion Recognition: A Review (brainsci-16-00041)
+   Liu, Xue, Yang, Li (Zhengzhou University)
+------------------------------------------------------------------------------
+SUMMARY: Reviews deep-learning architectures, optimization strategies, and
+model designs for EEG emotion recognition, discussed through a
+"commonality-individuality" (C-I) framework aimed at balancing universal
+and personalized (subject-specific) modeling.
+
+USED IN: Section 16.3, scripts/track_b_domain_adversarial.py.
+WHY: The sixth and last of the six converging DANN-motivating sources.
+
+------------------------------------------------------------------------------
+8. A Review of Deep Learning Techniques for EEG-Based Emotion Recognition:
+   Models, Methods, and Datasets (PRISMA systematic review, f1000research)
+   Sreehari, Raghavendra, Gudigar (Manipal Institute of Technology)
+------------------------------------------------------------------------------
+SUMMARY: A PRISMA-guided systematic review of 233 DL-based EEG emotion
+recognition papers (2020-2025), assessing datasets by stimulation procedure
+and emotional representation, aimed at more interpretable/generalizable/
+data-efficient future systems.
+
+USED IN: Section 16.3's result discussion (not the intervention design
+itself, but the interpretation of its outcome).
+WHY: This PRISMA review names "over-aggressive alignment collapsing class
+structure" as a documented failure pattern in unsupervised domain
+adaptation for EEG. That is matched almost exactly by this project's own
+DANN result (arousal AUC 0.616->0.400, dominance 0.552->0.403, both with
+precision/recall pinned near 0.50) -- used here to interpret a real result,
+not merely to cite a technique.
+
+------------------------------------------------------------------------------
+9. Cascaded Self-supervised Learning for Subject-independent EEG-based
+   Emotion Recognition
+   Wang, Chen, Song (Fudan University)
+------------------------------------------------------------------------------
+SUMMARY: Proposes a cascaded self-supervised architecture combining a
+low-level time-to-frequency-reconstruction (TFR) pretext task with
+high-level contrastive learning; evaluated on DEAP and DREAMER, reporting
+superior inter-subject generalizability and robustness to label scarcity.
+
+USED IN: Section 17.2, scripts/track_b_ssl_pretrain.py.
+WHY: The single highest-priority deferred idea from Section 16 -- uniquely
+among the SSL/contrastive papers reviewed, this is evaluated LOSO on DEAP
+itself while beating supervised domain-adaptation baselines, making it the
+strongest outside evidence that a pretraining stage (not a training-time
+loss/architecture change) could move this project's subject-independent
+AUC. The implemented pretext task (MSE regression onto each window's own
+DE band-power vector) is stated explicitly as a simplified, self-contained
+version of this paper's dual-stream time/frequency contrastive system, not
+a full reproduction.
+
+------------------------------------------------------------------------------
+10. Self-supervised Learning for Electroencephalogram: A Systematic Survey
+    Weng, Gu, Guo, Ma, Yang, Liu, Chen (Institute of Computing Technology,
+    Chinese Academy of Sciences)
+------------------------------------------------------------------------------
+SUMMARY: A systematic review of SSL frameworks applied to EEG signals in
+general (not emotion-specific): taxonomy, methodology, pretext-task design,
+and downstream-task adaptation across the EEG-SSL literature.
+
+USED IN: Section 17.2, scripts/track_b_ssl_pretrain.py.
+WHY: Corroborating survey-level context for the SSL-pretraining design
+choice in Section 17.2 (i.e., confirming pretext-task-based pretraining is
+an established, well-studied approach for EEG generally, not an ad hoc
+idea specific to paper #9).
+
+------------------------------------------------------------------------------
+11. Electroencephalogram Emotion Recognition via AUC Maximization
+    Xiao (Ohio State University)
+------------------------------------------------------------------------------
+SUMMARY: Uses DEAP's "Liking" label specifically (chosen because it is more
+imbalanced than the commonly-studied valence/arousal labels) as a worked
+example for AUC-maximization numerical optimization instead of accuracy-
+based training; reports recall improving from 41.6% to 79.7% and F1 from
+0.506 to 0.632 versus logistic regression/SVM baselines.
+
+USED IN: Section 17.3, scripts/track_b_auc_maximization.py.
+WHY: The most directly on-metric deferred idea in the whole review -- this
+project's own headline metric is ROC-AUC throughout, so a loss function
+that directly targets AUC (rather than per-sample cross-entropy) is a
+natural, cheap intervention. Notably, this paper's own choice to use
+DEAP's "Liking" label as its worked imbalance example independently
+corroborates this project's Section 8 finding that DEAP's binarized labels
+are meaningfully imbalanced and that this is under-addressed in the
+literature. The implemented loss (a mini-batch pairwise squared-hinge AUC
+surrogate) is stated explicitly as a simplified version of the Ying et
+al.-style objective this paper's full saddle-point solver is built around.
+
+------------------------------------------------------------------------------
+12. Towards Practical Emotion Recognition: An Unsupervised Source-Free
+    Approach for EEG Domain Adaptation
+    Imtiaz, Khan (Toronto Metropolitan University)
+------------------------------------------------------------------------------
+SUMMARY: Proposes a source-free unsupervised domain adaptation (SF-UDA)
+framework for cross-domain EEG emotion classification combining Dual-Loss
+Adaptive Regularization (DLAR) and Localized Consistency Learning (LCL);
+evaluated cross-corpus on DEAP, SEED, and DREAMER (e.g. trained on DEAP,
+tested on SEED/DREAMER without source data at adaptation time).
+
+USED IN: Section 17.4, scripts/track_b_test_time_adaptation.py.
+WHY: Surveys the source-free UDA family, of which AdaBN (Li et al. 2018)
+is the cheapest, most-established member -- the natural, cheap, target-
+aware follow-up to DANN (Section 16.3). This project implements AdaBN
+specifically, not this paper's full DLAR+LCL pseudo-labeling system,
+stated explicitly as a scoped-down single-technique test. Note also that
+this paper's own cross-corpus DEAP<->SEED/DREAMER experiments are directly
+relevant precedent for this project's Section 12 cross-corpus validation,
+though Section 12's own SEED-IV pipeline was built independently rather
+than adapted from this paper's method.
+
+------------------------------------------------------------------------------
+13. Enhancing EEG-Based Emotion Detection with Hybrid Models: Insights from
+    DEAP Dataset Applications (Sensors 2025, 25, 1827)
+    Mouazen, Benali, Chebchoub, Abdelwahed, De Marco
+    (Paris Nanterre University / Cadi Ayyad University)
+------------------------------------------------------------------------------
+SUMMARY: Evaluates KNN, SVM, Decision Tree, Random Forest, BiLSTM, GRU,
+CNN, autoencoders, and transformers on DEAP, reporting 85-95% peak accuracy
+with a hybrid approach, and explicitly uses SHAP (SHapley Additive
+exPlanations) to interpret which features drive classification decisions.
+
+USED IN: Section 17.5, scripts/track_a_shap_diagnostic.py.
+WHY: The direct precedent and motivation for this project's own SHAP
+diagnostic -- this paper's use of SHAP on DEAP specifically is what logged
+the idea as a cheap, never-run interpretability check: does this project's
+near-chance classifier lean on neurophysiologically plausible features, or
+does its weak decision boundary look noise-like? (Section 17.5's own
+finding -- diffuse importance spread roughly proportional to feature-family
+size, with frontal alpha asymmetry carrying the least importance of any
+family in every task -- is a genuinely different, more skeptical result
+than this source paper's own framing, and is reported as such.)
+
+==============================================================================
+PART B -- PAPERS REVIEWED, NOT DIRECTLY IMPLEMENTED (19)
+==============================================================================
+Grouped by theme. Each entry states what the paper actually contributes
+(from its real abstract) and, where plausible, why it was part of the
+review corpus even though no script in this repo implements its specific
+method. None of these were "taken from" in the sense of contributing code;
+any resemblance between an implemented technique and one of these papers
+elsewhere in this repo is coincidental unless stated otherwise above in
+Part A.
+
+--- B.1 Cross-corpus / contrastive methods (closest topical neighbor to
+        Section 12's own cross-corpus work) ---
+
+14. EEG-SCMM: Soft Contrastive Masked Modeling for Cross-Corpus EEG-Based
+    Emotion Recognition
+    Liu, Ye, Zhang, Liang (Shenzhen University)
+    SUMMARY: A self-supervised framework (soft contrastive learning +
+    hybrid masking, grounded in "emotional continuity" theory) for
+    cross-corpus generalization, evaluated on SEED, SEED-IV, and DEAP
+    together, reporting a 4.26% average accuracy improvement over the
+    second-best method in same-class and different-class cross-corpus
+    settings.
+    NOT IMPLEMENTED: this is the single most topically relevant paper in
+    the entire non-cited set to Section 12's DEAP->SEED-IV cross-corpus
+    validation, but its full self-supervised masked-modeling training
+    pipeline was out of scope for this project's simpler DE+XGBoost
+    common-channel transfer approach. A natural candidate for future work
+    if Section 12 is extended.
+
+--- B.2 Self-supervised / contrastive learning (alternatives to #9) ---
+
+15. Self-supervised Group Meiosis Contrastive Learning for EEG-Based
+    Emotion Recognition (SGMC)
+    Kan, Yu, Huang, Liu, Zhou (Beijing University of Technology)
+    SUMMARY: A genetics-inspired data-augmentation method ("Meiosis":
+    pairing, cross-exchanging, and separating stimulus-aligned EEG sample
+    groups) combined with group-level contrastive learning; reports 94.72%/
+    95.68% accuracy on DEAP valence/arousal.
+    NOT IMPLEMENTED: an alternative SSL pretext-task design to the one
+    actually implemented in Section 17.2 (which uses DE-band-power
+    regression, not Meiosis-style group augmentation). Reviewed as part of
+    the SSL literature survey but a different specific method was chosen.
+
+16. Emotion Recognition Based on Multi-Modal Electrophysiology Multi-Head
+    Attention Contrastive Learning (ME-MHACL)
+    Guo, Zhang, Huang (Chengdu Techman Software / Sichuan University)
+    SUMMARY: A self-supervised contrastive framework for MULTI-modal
+    physiological signals (EEG + GSR + respiration + temperature), tested
+    on DEAP and MAHNOB-HCI.
+    NOT IMPLEMENTED: out of scope by construction -- this project is
+    EEG-only throughout (DEAP's peripheral-signal channels 32-39 are
+    explicitly dropped in Section 2's preprocessing), so a multimodal
+    method could not be adapted without acquiring additional signal types.
+
+--- B.3 Data augmentation via GAN / diffusion ---
+
+17. EEG Feature Extraction and Data Augmentation in Emotion Recognition
+    Kalashami, Pedram, Sadr (Kharazmi University / Rahbord Shomal
+    Institute)
+    SUMMARY: Uses a Conditional Wasserstein GAN (CWGAN) to regenerate
+    additional EEG FEATURES (not raw signal) for data augmentation on
+    DEAP; reports a 6.5%/3.0% accuracy improvement for valence/arousal
+    after augmentation with SVM and DNN classifiers.
+    NOT IMPLEMENTED: this project's own data-quantity intervention
+    (Section 11, 50% window overlap) is a much simpler, non-generative
+    augmentation strategy; GAN-based feature synthesis was reviewed as
+    part of the augmentation literature but not built.
+
+18. Emotion Recognition Based on EEG Using Generative Adversarial Nets and
+    Convolutional Neural Network
+    Pan, Zheng (Jiangsu University of Science and Technology)
+    SUMMARY: Uses GANs to generate synthetic EEG samples addressing data
+    scarcity and class imbalance, comparing frequency-band-correlation vs.
+    frequency-band-separation CNN models before/after augmentation.
+    NOT IMPLEMENTED: same augmentation theme as #17; not built.
+
+19. Enhancing EEG Signal-Based Emotion Recognition with Synthetic Data:
+    Diffusion Model Approach
+    Siddhad, Iwamura, Roy (IIT Roorkee / Osaka Metropolitan University)
+    SUMMARY: A conditional denoising diffusion probabilistic model (DDPM)
+    generates synthetic EEG samples for DEAP and SADT, reporting up to
+    5.6% accuracy improvement over real-data-only baselines, and uses
+    t-SNE/SHAP for interpretability analysis of the synthetic data.
+    NOT IMPLEMENTED: same augmentation theme as #17/#18, using a more
+    modern generative approach (diffusion vs. GAN); not built. Note this
+    paper's own use of SHAP is a second, independent precedent (alongside
+    #13) for interpretability analysis being a live concern in this
+    literature.
+
+--- B.4 Alternative architectures (not adopted; Track B used only EEGNet,
+        ShallowConvNet, CNN-LSTM, TSception) ---
+
+20. Spatial-Temporal Transformers for EEG Emotion Recognition
+    Liu, Wu, Zhang, Zhao (Northwestern Polytechnical University)
+    SUMMARY: Compares four transformer variants (spatial attention,
+    temporal attention, sequential spatial-temporal, simultaneous
+    spatial-temporal) for EEG emotion recognition; finds simultaneous
+    spatial-temporal attention performs best.
+    NOT IMPLEMENTED: an alternative Track-B-style architecture; not added
+    to this project's fixed four-architecture comparison.
+
+21. A Novel Fourier Adjacency Transformer for Advanced EEG Emotion
+    Recognition
+    Wang, Huang, Song, Wang, Su, Ding (Kunming Univ. of Science and
+    Technology / Xi'an Jiaotong-Liverpool University)
+    SUMMARY: Combines Fourier-based periodic-feature extraction with
+    graph-driven adjacency attention; reports ~6.5% accuracy improvement
+    over prior state of the art on SEED and DEAP.
+    NOT IMPLEMENTED: reviewed as competitive-context background (a
+    published DEAP benchmark number to compare against), architecture not
+    adopted.
+
+22. A Two-Stage Efficient 3-D CNN Framework for EEG Based Emotion
+    Recognition
+    Qiao, Alnemari, Bagherzadeh (UC Irvine)
+    SUMMARY: An efficient EEGNet-inspired 3D-CNN with inverted-residual
+    depthwise-separable blocks, then binarized (BNN) for edge deployment;
+    reports 90-99.5% accuracy at 6.4k-25k parameters, with novel
+    techniques recovering 20% of the accuracy binarization normally costs.
+    NOT IMPLEMENTED: a compute-efficiency angle tangential to this
+    project's own EEGNet baseline (2130 params); not adopted, since model
+    compression/edge deployment was out of scope.
+
+23. AMDET: Attention based Multiple Dimensions EEG Transformer for Emotion
+    Recognition
+    Xu, Du, Zou, Zhou, Xiao, Liu, Ma (Southern Medical University /
+    UCLA / UC Berkeley)
+    SUMMARY: A spectral-spatial-temporal transformer tested on DEAP, SEED,
+    AND SEED-IV together, reporting 97.48%/96.85% on DEAP arousal/valence
+    and 87.32% on SEED-IV, with channel-reduction analysis (>90% accuracy
+    with only 8 of 62 channels).
+    NOT IMPLEMENTED: notable as one of very few papers in the corpus
+    benchmarked across all three of this project's own datasets (DEAP and
+    SEED-IV); its reported accuracy figures are a useful comparison point
+    for how differently this literature reports numbers versus this
+    project's own subject-independent protocol, but its architecture and
+    channel-selection method were not adopted.
+
+24. ERTNet: An Interpretable Transformer-Based Framework for EEG Emotion
+    Recognition
+    Liu, Chao, Ma, Sha, Sun, Li, Chang (China Medical University)
+    SUMMARY: A hybrid CNN-transformer with a learnable Gaussian-like
+    convolution kernel for noise filtering, reporting 74.23%+-2.59% on
+    DEAP and 67.17%+-1.70% on SEED-V, with band-importance analysis
+    finding beta/gamma bands most influential.
+    NOT IMPLEMENTED: architecturally tangential; its interpretability
+    angle (learned-kernel/band analysis) is a different specific technique
+    from this project's own SHAP diagnostic (#13), not adopted directly.
+
+25. LEL: Lipschitz Continuity Constrained Ensemble Learning for Efficient
+    EEG-Based Intra-Subject Emotion Recognition
+    Gong, Li, Kang, Chai, Zeng, Yan, Zhang, Siok, Wang (Shanghai Maritime
+    University / Hong Kong Polytechnic University et al.)
+    SUMMARY: Enforces Lipschitz-continuity constraints on transformer
+    attention/spectral-extraction/normalization modules plus a learnable
+    ensemble fusion strategy; evaluated on EAV, FACED, and SEED -- NOT
+    DEAP -- for INTRA-subject (not subject-independent) emotion
+    recognition.
+    NOT IMPLEMENTED, and the least directly relevant paper in the corpus
+    to this project: it targets a different dataset set, a different
+    (intra-subject, not subject-independent) evaluation regime, and a
+    different architecture family. Included in the review corpus for
+    general ensemble/stability-technique awareness only.
+
+26. EEG Emotion Recognition Through Deep Learning
+    Dolgopolyi, Chatzipanagiotou (American College of Greece)
+    SUMMARY: A CNN-Transformer architecture for 3-class (positive/neutral/
+    negative) emotion classification trained on a custom merged SEED/
+    SEED-FRA/SEED-GER dataset, achieving 91% test accuracy while using
+    only 5 of 62 electrodes.
+    NOT IMPLEMENTED: not DEAP-based; reviewed for its channel-reduction
+    result (relevant background for practical/consumer-EEG deployment
+    discussions) but not adopted.
+
+--- B.5 General surveys / reviews (broader context than the six DANN
+        sources in Part A) ---
+
+27. A Comprehensive Survey on EEG-Based Emotion Recognition: A Graph-Based
+    Perspective
+    Liu, Zhou, Wu, Ding, Zhai, Wang, Jia, Liu (Nanyang Technological
+    University et al.)
+    SUMMARY: A companion/overlapping survey to #6 above (several shared
+    authors), presenting a unified framework for graph applications in
+    EEG-based emotion recognition and categorizing existing methods on
+    that basis.
+    NOT SEPARATELY IMPLEMENTED: see the note under entry #6 -- this is a
+    plausible co-contributor to the notebook's single "GNN survey"
+    citation in Section 16.3 rather than an independently-used source in
+    its own right; listed here because the codebase does not disambiguate
+    between the two.
+
+28. EEG-Based Emotion Recognition Systems: Comprehensive Study (main.pdf,
+    Heliyon)
+    Hamzah, Abdalla (University of Babylon)
+    SUMMARY: A broad review of EEG feature-extraction approaches across
+    four categories (time-domain, frequency-domain, time-frequency,
+    nonlinear features), with emphasis on deep-learning-based studies,
+    their characteristics, and applicable scenarios.
+    NOT IMPLEMENTED: general background reading; its four-category
+    feature taxonomy maps loosely onto this project's own DE (frequency-
+    domain) + Hjorth (nonlinear/time-domain) + connectivity feature
+    families in Section 9, but no specific method was adopted from it.
+
+--- B.6 High-accuracy DEAP benchmark papers (relevant as comparison points
+        for this project's own leaky-split argument, Section 13) ---
+
+29. Detecting Emotions Through EEG Signals Based on Modified Convolutional
+    Fuzzy Neural Network
+    Ahmadzadeh Nobari Azar, Cavus, Esmaili, Sekeroglu, Asir (multi-
+    institution)
+    SUMMARY: A modified Convolutional Fuzzy Neural Network (CFNN) for
+    DEAP emotion recognition, reporting 98.21%/98.08% accuracy for
+    valence/arousal.
+    NOT IMPLEMENTED: not adopted as a technique, but its reported accuracy
+    is exactly the kind of very-high, presumably-leaky-split DEAP number
+    that Section 13's central argument contrasts against this project's
+    own genuinely subject-independent ~0.45-0.56 AUC.
+
+30. EEG-Based Smart Emotion Recognition Using Meta-Heuristic Optimization
+    and Hybrid Deep Learning Techniques
+    Karthiga, Suganya, Sountharrajan, Balusamy, Selvarajan (Bannari Amman
+    Institute of Technology et al.)
+    SUMMARY: A hybrid Artificial-Bee-Colony + Grey-Wolf-Optimizer (ABC-GWO)
+    feature-extraction/hyperparameter-tuning pipeline on DEAP and SEED,
+    reporting up to ~100% accuracy on DEAP with the full hybrid CNN-
+    ABC-GWO model.
+    NOT IMPLEMENTED: same role as #29 -- an extreme benchmark data point
+    for the leaky-evaluation contrast in Section 13, not a technique this
+    project adopted.
+
+31. Three-Way Emotion Classification of EEG-based Signals using Machine
+    Learning
+    Purwar, Simkar, Madhumita, Kadam (MNNIT Allahabad)
+    SUMMARY: Compares Logistic Regression, SVM, and Random Forest for
+    3-class (negative/neutral/positive) EEG emotion classification,
+    finding Random Forest strongest.
+    NOT IMPLEMENTED: general classical-ML comparative background,
+    consistent with this project's own Track A model choices but not a
+    source of any specific technique.
+
+32. Towards emotion recognition for virtual environments: an evaluation of
+    EEG features on benchmark dataset
+    Menezes, Samara, Galway, Sant'Anna, Verikas, Alonso-Fernandez, Wang,
+    Bond (Halmstad University / Ulster University)
+    SUMMARY: Investigates statistical/band-power/High-Order-Crossing
+    features on DEAP with SVM and Random Forest for Russell's Circumplex
+    Model (valence/arousal), aimed at affective virtual-environment
+    interaction.
+    NOT IMPLEMENTED: the closest topical sibling in the entire non-cited
+    set to this project's own Track A design (SVM/RF on DEAP band-power
+    features) -- useful comparative context for the DE+classical
+    pipeline's design choices, but no specific code was drawn from it.
+
+==============================================================================
+SUMMARY TABLE
+==============================================================================
+Used, explicit attribution ................ 13 papers  (Part A)
+Reviewed, not implemented .................. 19 papers  (Part B)
+Total corpus ................................ 32 papers
+
+Breakdown of Part B by why it wasn't implemented:
+  - Topically closest but out of scope (full pipeline too large) ... 1  (#14)
+  - Alternative technique in an area this project DID cover ........ 6  (#15,
+    #17, #18, #19, #24, #27 -- alternative SSL/augmentation/
+    interpretability/GNN-survey methods)
+  - Different architecture family, not adopted ...................... 5
+    (#20, #21, #22, #23, #26)
+  - Out of scope by construction (multimodal, different dataset,
+    different evaluation regime) ..................................... 2
+    (#16, #25)
+  - General background / survey context ............................. 2
+    (#28, #31, #32 -- three, see note)
+  - High-accuracy benchmark used only as a comparison point for
+    Section 13's leaky-evaluation argument ............................ 2
+    (#29, #30)
+
+RECOMMENDATION
+--------------
+Before this project is written up as a formal thesis/paper, decide whether
+to (a) keep the full 32-paper corpus and cite Part B's entries as general
+background/related-work, correctly labeled as such, or (b) trim
+papers_EEG/ down to the 13 papers in Part A that actually drove an
+implemented experiment, to keep the bibliography tight. Either is
+defensible; what would NOT be defensible is citing any Part B paper as if
+it directly informed a specific implemented technique, since -- based on
+this reconstruction -- none of them did.

@@ -1,0 +1,27 @@
+# Datasets (large files, multi-GB)
+deap-dataset/
+seed-dataset/
+
+# Feature / window cache
+processed_cache/
+
+# Data artifacts
+*.dat
+*.npz
+*.npy
+
+# Python and Jupyter
+__pycache__/
+*.py[cod]
+*$py.class
+.ipynb_checkpoints/
+
+# Virtual environments & IDE
+.env
+.venv/
+env/
+venv/
+.vscode/
+.idea/
+.claude/
+.claude.json

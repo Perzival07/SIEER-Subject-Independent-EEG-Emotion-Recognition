@@ -1,0 +1,1027 @@
+================================================================================
+PROJECT JUSTIFICATION LOG
+Database for Emotion Analysis using Physiological Signals Electroencephalogram
+Emotion Recognition -- Comparative Analysis
+================================================================================
+
+PURPOSE OF THIS DOCUMENT
+--------------------------------------------------------------------------------
+This is a plain-text, step-by-step account of every major decision made in this
+project, in the order it was made, together with the reasoning behind it. The
+file named Project_Report.tex, and its exported Portable Document Format
+version, documents what was done and what was found; this document exists
+specifically to answer why each step was taken -- what problem it was solving,
+what alternative was rejected and why, and what the result of that step then
+justified doing next. Read from beginning to end for the full chain of
+reasoning, from the first design decision to the final polishing changes.
+
+================================================================================
+STEP ONE -- CHOOSING THE DATASET: THE DATABASE FOR EMOTION ANALYSIS USING
+PHYSIOLOGICAL SIGNALS
+================================================================================
+WHAT: The project uses the Database for Emotion Analysis using Physiological
+Signals (thirty-two subjects multiplied by forty trials multiplied by
+thirty-two Electroencephalogram channels, sampled at one hundred twenty-eight
+Hertz), specifically the pre-processed Python release (files with the dot-dat
+extension), sourced from a Kaggle mirror rather than the official source
+maintained by the School of Electronic Engineering and Computer Science at
+Queen Mary University of London.
+
+WHY:
+- The Database for Emotion Analysis using Physiological Signals is one of the
+  most widely used Electroencephalogram emotion benchmarks, which makes
+  results directly comparable to a large body of published literature
+  (including the Area Under the Receiver Operating Characteristic Curve value
+  of zero point nine seven claimed by Hasan and colleagues in two thousand
+  twenty-five, a claim that this project ends up directly contrasting itself
+  against).
+- The official source for this dataset requires registration and acceptance
+  of an End User License Agreement, and was, at the time of this work,
+  returning a Hypertext Transfer Protocol error code numbered five hundred
+  three (meaning "Service Unavailable"), so it could not be relied upon. The
+  Kaggle mirror of the already pre-processed dot-dat files was the only
+  practically obtainable version, so it was used and explicitly documented as
+  such (the read-me file marks the official source as "not used" rather than
+  silently citing it as the data origin -- this is a data-provenance and
+  honesty decision, not a technical one).
+- Labels are continuous, self-assessment ratings on a one-to-nine scale for
+  four dimensions (valence, arousal, dominance, and liking). Converting these
+  into two categories (binarizing) at the standard threshold of five point
+  zero, as established by the dataset's own creators, was used because it is
+  the convention nearly every comparable published paper uses, which keeps
+  this project's numbers comparable to the existing literature rather than
+  inventing a custom-built labeling scheme that could not be benchmarked
+  against anything else.
+
+================================================================================
+STEP TWO -- DESIGNING TWO PARALLEL, COMPARABLE PIPELINES (TRACK ONE VERSUS
+TRACK TWO)
+================================================================================
+WHAT: Every experiment splits into "Track One" (six classical machine-learning
+models trained on hand-crafted Differential Entropy features) and "Track Two"
+(four deep-learning architectures trained on raw, standardized Electro-
+encephalogram windows).
+
+WHY:
+- The central question of the project is a head-to-head comparison of
+  feature-engineering combined with classical machine learning versus
+  end-to-end deep learning for this exact problem. Running only one paradigm
+  would answer "does this one approach work" rather than "which approach
+  works better, and by how much," which was the actual objective.
+- Keeping both tracks fed from the same baseline-corrected, windowed signal
+  (Step Three) rather than two independently pre-processed pipelines was a
+  deliberate control: any difference in results should be attributable to the
+  modeling paradigm (hand-crafted features versus raw signal), not to
+  inconsistent preprocessing between the two tracks.
+
+================================================================================
+STEP THREE -- PREPROCESSING DECISIONS (BASELINE CORRECTION, WINDOWING,
+FREQUENCY BANDS)
+================================================================================
+WHAT: Each sixty-second trial is baseline-corrected using its own three-
+second pre-trial baseline period, then cut into four-second (five hundred
+twelve sample) non-overlapping windows; four standard Electroencephalogram
+frequency bands (theta, alpha, beta, and gamma) are used to compute Track
+One's Differential Entropy features.
+
+WHY:
+- Baseline correction (subtracting each channel's own pre-trial average
+  value) removes subject-specific and session-specific direct-current offset
+  and slow drift before either feature branch is computed -- without this, a
+  classifier could partly be learning "which subject or session had which
+  baseline" rather than an emotion signal, which would be a confounding
+  factor, not a genuine result.
+- Four-second, five-hundred-twelve-sample, non-overlapping windows were
+  chosen as a standard, conservative choice that avoids the sample-non-
+  independence problem that a later step (Step Eleven) deliberately
+  re-introduces and explicitly flags as a limitation -- that is to say, non-
+  overlapping windows were the "clean" default, and overlapping windows were
+  only tried afterward as a controlled experiment, not as the starting point.
+- Differential Entropy, computed as zero point five multiplied by the natural
+  logarithm of two multiplied by pi multiplied by Euler's number multiplied
+  by the variance of the window, was used because it is the standard
+  Electroencephalogram frequency-band-power feature in the literature
+  (closed-form, computationally cheap, and the dominant feature type in
+  nearly every comparable published paper), which again keeps Track One
+  comparable to prior published work rather than novel purely for its own
+  sake.
+- Grouping every window by its subject identifier from this step onward was
+  necessary groundwork for Step Four (subject-independent evaluation) --
+  without a subject identifier attached to every window, Grouped K-Fold
+  Cross-Validation and Grouped Shuffle-Split Cross-Validation would have been
+  impossible to carry out later.
+
+================================================================================
+STEP FOUR -- SUBJECT-INDEPENDENT EVALUATION PROTOCOL (GROUPED K-FOLD AND
+GROUPED SHUFFLE-SPLIT CROSS-VALIDATION)
+================================================================================
+WHAT: All evaluation uses the scikit-learn software library's Grouped K-Fold
+Cross-Validation or Grouped Shuffle-Split Cross-Validation, grouped by
+subject, so that no single subject's windows ever appear in both the training
+set and the testing set of the same split.
+
+WHY: This is arguably the single most important methodological decision in
+the whole project. A large amount of published Electroencephalogram-emotion
+research evaluates with ungrouped splits, which let windows from the same
+subject or the same trial leak across the training and testing boundary -- a
+classifier can then partly "recognize the subject" rather than the emotion,
+which inflates reported accuracy without representing what a model could
+actually do on a genuinely new, previously unseen person. This project chose
+the harder, leakage-free protocol specifically so its results would mean
+something for the realistic use case (deploying the system on a new user),
+even though this decision is the direct cause of the low Area Under the Curve
+values seen throughout the rest of the project. The report treats this
+trade-off explicitly: the low performance ceiling is presented as the honest
+cost of a leakage-free evaluation, not hidden away or explained away.
+
+================================================================================
+STEP FIVE -- TRACK ONE: SIX CLASSICAL MODELS, STANDARD-SCALED PIPELINE
+================================================================================
+WHAT: Logistic Regression, k-Nearest Neighbors, Random Forest, a Support
+Vector Machine with a Radial Basis Function kernel, Extreme Gradient
+Boosting, and a shallow Multi-Layer Perceptron, each wrapped in a standard-
+scaling pipeline, evaluated with five-fold Grouped K-Fold Cross-Validation.
+The Support Vector Machine's training folds are capped at eight thousand
+samples.
+
+WHY:
+- Six models spanning different underlying assumptions (a linear hyperplane,
+  a distance-based lazy-learning method, two different tree ensembles built
+  by different objectives, a kernel-based method, and a generic nonlinear
+  function approximator) were chosen deliberately so that any later finding
+  of a shared performance ceiling (Step Eight, Step Twenty-One) could not be
+  dismissed as "a weak model family was simply chosen" -- the breadth of
+  model choice is itself part of the argument the project later makes.
+- Standard scaling (rescaling every feature to zero mean and unit variance)
+  is necessary because several of these models (the Support Vector Machine,
+  k-Nearest Neighbors, Logistic Regression, and the Multi-Layer Perceptron)
+  are sensitive to feature scale, and the Differential Entropy features vary
+  widely in magnitude across frequency bands and channels.
+- The Support Vector Machine sample cap is a pragmatic runtime trade-off (a
+  Radial-Basis-Function-kernel Support Vector Machine scales poorly with the
+  number of samples); it is documented explicitly as a computational
+  concession rather than left as an unexplained inconsistency with the other
+  five models.
+
+================================================================================
+STEP SIX -- TRACK TWO: FOUR DEEP ARCHITECTURES, IMPLEMENTED FROM SCRATCH
+================================================================================
+WHAT: EEGNet, ShallowConvNet, a custom-built Convolutional Neural Network
+combined with a Long Short-Term Memory network, and TSception, all
+implemented from scratch using the PyTorch software library, trained under a
+seventy-fifteen-fifteen percent subject-wise split with the AdamW
+optimization algorithm (Adaptive Moment Estimation with decoupled weight
+decay), a plateau-based learning-rate schedule, automatic mixed-precision
+computation, and early stopping (with a patience of eight epochs) based on
+validation loss.
+
+WHY:
+- EEGNet and ShallowConvNet were chosen because they are the two most-cited,
+  purpose-built Electroencephalogram architectures in the published
+  literature, giving Track Two a literature-grounded baseline analogous to
+  Track One's use of standard Differential Entropy features.
+- The Convolutional-Neural-Network-and-Long-Short-Term-Memory model and
+  TSception were added to cover, respectively, a generic sequence-modeling
+  approach and an architecture built around a specific neurophysiological
+  hypothesis (hemisphere asymmetry) -- this choice was deliberate so the
+  project could later test (Step Twenty-One) whether encoding a named
+  neuroscience hypothesis directly into a model's structure actually helps,
+  rather than simply assuming that it would.
+- Implementing all four architectures from scratch (rather than importing
+  pre-trained reference implementations) was necessary because no
+  off-the-shelf implementation matches this project's exact input shape,
+  windowing scheme, and label set; it also makes the training procedure
+  fully auditable from end to end.
+- Early stopping on validation loss, with a policy of restoring the best
+  validation-loss checkpoint, was used to prevent overfitting to the small
+  per-subject training signal, given the low sample efficiency the project
+  encounters throughout Track Two.
+
+================================================================================
+STEP SEVEN -- CHECKING CLASS BALANCE BEFORE TRUSTING ANY ACCURACY NUMBER
+================================================================================
+WHAT: Class counts were computed directly from the window array before
+drawing any conclusions from an accuracy figure: valence twenty-one point
+zero percent high, arousal twenty-three point three percent high, dominance
+sixty point nine percent high, liking sixty-six point five percent high.
+
+WHY: This step was inserted specifically because accuracy alone is
+misleading under class imbalance -- a classifier that always predicts the
+majority class on the valence task would already score approximately
+seventy-nine percent accuracy while having learned nothing meaningful. Doing
+this check before interpreting the Track One and Track Two results (rather
+than afterward, as an afterthought) was necessary so that every accuracy
+number reported from this point onward could be read correctly, and it
+directly explains a pattern found later (Step Eight): Track Two's eighty-
+three point five percent valence accuracy sitting at only approximately
+zero point five six Area Under the Curve.
+
+================================================================================
+STEP EIGHT -- COMBINED COMPARISON AND THE DISCUSSION THAT DEFINED THE
+PROJECT'S CENTRAL QUESTION
+================================================================================
+WHAT: All ten models (six classical models plus four deep-learning models)
+across all four tasks were tabulated together (forty results in total), and
+a discussion section was written examining the pattern across them.
+
+WHY: This step is the pivot point of the whole project. The result -- every
+one of the forty model-and-task combinations landing in a narrow Area Under
+the Curve band ranging from zero point two nine to zero point six one, that
+is to say, at or barely above random chance -- was not the expected outcome
+(published work on the Database for Emotion Analysis using Physiological
+Signals reports far higher numbers, for example, approximately zero point
+nine seven Area Under the Curve as claimed by Hasan and colleagues in two
+thousand twenty-five). Rather than treat this as a failed experiment and
+stop, the project reframes the near-chance performance ceiling itself as the
+object of study: "why is subject-independent performance this weak, when
+literature relying on leaky data splits reports near-perfect results?" All
+subsequent steps (Steps Nine through Twenty) exist to answer this one
+question, each testing one specific candidate explanation.
+
+================================================================================
+STEP NINE -- RICHER TRACK ONE FEATURES (HJORTH PARAMETERS, FRONTAL ALPHA
+ASYMMETRY, CONNECTIVITY)
+================================================================================
+WHAT: Three additional feature families (Hjorth parameters, frontal and
+hemispheric alpha asymmetry, and Phase-Locking-Value-and-coherence
+connectivity) were added to the one-hundred-twenty-eight-dimensional
+Differential Entropy baseline and systematically removed and re-added
+(ablated) across six feature-set combinations.
+
+WHY: This tests the first, most obvious candidate explanation for the
+performance ceiling: "perhaps Differential Entropy alone is too
+impoverished a feature set." Hjorth parameters add time-domain complexity
+descriptors that Differential Entropy cannot capture; frontal alpha
+asymmetry encodes the classic Davidson-style valence hypothesis directly;
+connectivity features add inter-channel structure that per-channel
+Differential Entropy cannot see. Testing all three, and their combinations,
+rather than adding just one, was necessary to rule feature richness out as a
+cause with reasonable confidence, rather than leaving open the possibility
+that some other missing feature family would have helped.
+RESULT AND JUSTIFICATION FOR THE NEXT STEP: mean Area Under the Curve moved
+only between zero point four seven eight and zero point four nine four
+across all six feature sets -- feature richness was ruled out, which
+justified moving on to test methodology (Step Ten) rather than continuing to
+hunt for additional features.
+
+================================================================================
+STEP TEN -- REPEATED AND NESTED GROUPED K-FOLD CROSS-VALIDATION
+================================================================================
+WHAT: (a) Repeated Grouped K-Fold Cross-Validation, achieved through subject-
+identifier relabeling (five repeats multiplied by five folds, giving twenty-
+five folds in total), to obtain genuine ninety-five-percent confidence
+intervals; and (b) nested cross-validation (an outer five-fold Grouped
+K-Fold Cross-Validation together with an inner three-fold Grouped K-Fold
+Cross-Validation, using a randomized hyperparameter search) for Extreme
+Gradient Boosting and Random Forest.
+
+WHY: Two more candidate explanations needed ruling out: (a) "perhaps the
+single-split Area Under the Curve estimates are simply noisy, and a properly
+computed confidence interval would reveal genuine signal," and (b) "perhaps
+the fixed, hand-picked hyperparameters used everywhere else in the project
+were leaving accuracy on the table." Since the scikit-learn software library
+has no built-in repeated-group cross-validation procedure, a custom
+generator had to be built (relabeling subject identifiers before each call
+to Grouped K-Fold Cross-Validation, because that procedure's greedy fold
+assignment is sensitive to the sorted order of the group labels) -- this was
+necessary engineering, not an incidental detail, because without it, the
+"repeat" would silently produce the identical fold partition every time.
+RESULT AND JUSTIFICATION FOR THE NEXT STEP: fifteen of twenty-four confidence
+intervals contained the chance value of zero point five; nested
+hyperparameter tuning moved the dominance task's Extreme Gradient Boosting
+result by only plus zero point zero two one. Both cross-validation rigor and
+fixed hyperparameters were ruled out as the main bottleneck, justifying a
+move to testing data quantity (Step Eleven) instead.
+
+================================================================================
+STEP ELEVEN -- FIFTY-PERCENT OVERLAPPING WINDOWS
+================================================================================
+WHAT: A second raw-window cache was built using a two-second stride (fifty-
+percent overlap between consecutive windows, giving twenty-nine windows per
+trial instead of fifteen), and Track Two was rerun with five repeated
+seventy-fifteen-fifteen percent splits on both window variants, across all
+four architectures and all four tasks.
+
+WHY: This tests the candidate explanation "perhaps there simply is not
+enough training data, and more, denser windows would help." Overlap was
+chosen specifically because it is the least expensive way to generate more
+windows without requiring new subjects or new trials. The non-independence
+limitation (overlapping windows share up to fifty percent of their raw
+samples with their neighbors, so grouping by subject still prevents cross-
+subject leakage, but does not prevent this within-subject correlation) was
+stated up front, before running the experiment, precisely so that any
+apparent improvement could not be mistaken for a clean result.
+RESULT AND JUSTIFICATION FOR THE NEXT STEP: mean Area Under the Curve moved
+from zero point four eight three to zero point four nine eight, a change
+that is small and inconsistent in direction -- data quantity by way of
+overlap was ruled out, reinforcing that "more correlated windows is not the
+same as more information," and motivating a shift away from data-side
+interventions toward asking whether the underlying problem is specific to
+this particular dataset (Step Twelve).
+
+================================================================================
+STEP TWELVE -- CROSS-CORPUS VALIDATION AGAINST THE SHANGHAI JIAO TONG
+UNIVERSITY EMOTION ELECTROENCEPHALOGRAM DATASET, VERSION FOUR
+================================================================================
+WHAT: A from-scratch adapter and orchestration pipeline was built to run (one)
+a within-Database-for-Emotion-Analysis-using-Physiological-Signals baseline,
+using Grouped K-Fold Cross-Validation, restricted to the thirty-two channels
+that this dataset shares with the Shanghai Jiao Tong University Emotion
+Electroencephalogram Dataset, version four; (two) a zero-shot transfer
+experiment from the Database for Emotion Analysis using Physiological
+Signals to the Shanghai Jiao Tong University Emotion Electroencephalogram
+Dataset, version four; and (three) a Leave-One-Subject-Out baseline computed
+purely within the Shanghai Jiao Tong University Emotion Electroencephalogram
+Dataset, version four.
+
+WHY -- dataset choice: the Shanghai Jiao Tong University Emotion
+Electroencephalogram Dataset, version four (also known by its marketing name,
+"EmotionMeter"), was chosen over the original three-class Shanghai Jiao Tong
+University Emotion Electroencephalogram Dataset, over the Database for Emotion
+Assessment using Rating-based Estimation and Modalities of Emotional Response
+dataset, and over the Multimodal Research dataset called A Dataset for Affect,
+Personality and Mood Research on Individuals and Groups, specifically because
+it is mirrored on Kaggle without requiring a signed data-use agreement,
+whereas the other three all remain gated behind such agreements. This was a
+pragmatic data-access decision, documented as such (and the validation
+against the two gated datasets that was never run is explicitly listed later
+as "not done," rather than silently omitted).
+WHY -- the experiment itself: this step exists to answer the biggest open
+question left after Steps Nine through Eleven ruled out feature richness,
+evaluation methodology, and data quantity as causes: "is the near-chance
+performance ceiling a property of the Database for Emotion Analysis using
+Physiological Signals specifically, or of subject-independent
+Electroencephalogram emotion decoding in general?" This is the only way to
+distinguish between those two explanations, since every prior step only ever
+touched the Database for Emotion Analysis using Physiological Signals.
+WHY the engineering choices inside the adapter were made as they were:
+channel-name intersection, together with rebuilding the Differential Entropy
+features for the Database for Emotion Analysis using Physiological Signals
+on that same restricted and reordered channel set, were necessary so that
+the model trained on the Database for Emotion Analysis using Physiological
+Signals was retested fairly, rather than being fed a mismatched feature
+vector; the defensive channel-order-file resolution and the defensive label-
+file fallback (checked by hand against the original research paper describing
+the Shanghai Jiao Tong University Emotion Electroencephalogram Dataset,
+version four, and against its accompanying read-me file) were necessary
+because the actual Kaggle download did not match the file names and format
+originally assumed -- a fallback that silently guessed at the correct
+labels would have been worse than producing no result at all, so it was
+verified by hand before being trusted.
+RESULT AND JUSTIFICATION FOR THE LATER CONCLUSION: the identical pipeline
+reached a moderate zero point six seven three Area Under the Curve on the
+Shanghai Jiao Tong University Emotion Electroencephalogram Dataset, version
+four (under the Leave-One-Subject-Out protocol), compared with a below-chance
+zero point four five two point estimate within the Database for Emotion
+Analysis using Physiological Signals itself, on the same thirty-two-channel
+restriction. This overturned the project's own working assumption that a
+weak signal within the Database for Emotion Analysis using Physiological
+Signals would imply a universally weak signal, and became the basis for the
+project's final, carefully qualified claim (Step Twenty-Four) that the
+performance ceiling may be specific to the Database for Emotion Analysis
+using Physiological Signals.
+
+================================================================================
+STEP THIRTEEN -- LABEL-CLEANUP ABLATION
+================================================================================
+WHAT: Three label-construction variants were compared: the raw five point
+zero threshold (the baseline), a per-subject standardized-score (commonly
+called a "z-score") threshold correcting for individual rating-anchoring
+bias, and a "drop-the-middle" scheme discarding ambiguous ratings near the
+threshold.
+
+WHY: This tests a candidate explanation specific to the self-reported labels
+used by the Database for Emotion Analysis using Physiological Signals:
+"perhaps a fixed, global threshold applied to a subjective one-to-nine scale
+is itself noisy, since different people anchor their ratings differently."
+Per-subject standardized-score thresholding targets that anchoring-bias
+hypothesis directly; the drop-the-middle scheme targets the more generic
+hypothesis that borderline ratings are simply mislabeled. Testing both,
+rather than choosing only one, was needed to distinguish "labels are
+subjectively anchored" from "labels are merely noisy near the cutoff point."
+RESULT AND JUSTIFICATION FOR THE NEXT STEP: per-subject standardized-score
+thresholding gave the largest improvement (zero point five one four versus
+a zero point four eight three baseline), but not enough to declare the fixed
+threshold the main bottleneck, especially since it also shifted class
+balance substantially (the valence task moved from twenty-one point zero
+percent to forty-seven point three percent high), which complicates any
+fair before-and-after accuracy comparison. Label definition was
+provisionally ruled out as the dominant cause, motivating a shift toward
+subject-level personalization (Step Fourteen).
+
+================================================================================
+STEP FOURTEEN -- PER-SUBJECT CALIBRATION (LEAVE-ONE-SUBJECT-OUT)
+================================================================================
+WHAT: A true thirty-two-fold Leave-One-Subject-Out evaluation was run using
+Extreme Gradient Boosting specifically (chosen because it is inexpensive
+enough, at approximately thirteen seconds per subject, to make a full
+Leave-One-Subject-Out evaluation practical): for each held-out subject, an
+eighty-twenty percent trial-level evaluation-and-calibration split was used
+to warm-start approximately forty additional boosted decision trees on
+eight of that subject's own trials, before re-scoring the model on the
+identical evaluation set.
+
+WHY: Every prior step evaluated purely subject-independent performance; this
+step asks a different, complementary question: "does even a small amount of
+the target subject's own data help at all?" If it did not, that would
+suggest the performance ceiling is pure between-subject noise that no amount
+of personalization could fix; if it did help, that would suggest at least
+part of the signal is genuine, but specific to the individual subject rather
+than universal. The trial-level (rather than window-level) split for
+calibration was necessary so that a given trial's fifteen windows never
+crossed the evaluation-and-calibration boundary, preserving the same no-
+leakage discipline used everywhere else in the project. Subjects whose
+calibration set contained only a single class (thirteen such cases across
+all four tasks) were explicitly skipped and reported as skipped, rather than
+silently dropped or artificially forced, to avoid quietly inflating the
+calibrated numbers.
+RESULT AND JUSTIFICATION: calibrated Area Under the Curve rose modestly
+across all four tasks (for example, from approximately zero point five zero
+to zero point five one before calibration, up to zero point five seven seven
+for the arousal task after calibration), supporting the reading that part of
+the performance ceiling is learnable, subject-specific structure, rather
+than purely unlearnable noise -- an important, non-obvious nuance kept in
+the project's final conclusions.
+
+================================================================================
+STEP FIFTEEN -- LITERATURE REVIEW (THIRTY-TWO RESEARCH PAPERS)
+================================================================================
+WHAT: Thirty-two research papers, in Portable Document Format, were
+assembled into a folder named papers_EEG, reviewed, and logged (in the files
+named citations.txt and literature_log.txt), specifically to surface
+techniques not yet tried in this project.
+
+WHY: By this point, every "home-grown" hypothesis (feature richness, cross-
+validation rigor, data quantity, label definition, and personalization) had
+already been tested. Rather than continue inventing ad-hoc fixes, the
+project deliberately turned to the published literature to find techniques
+with independent theoretical grounding for exactly this kind of subject-
+shift problem (domain alignment, adversarial training, self-supervised
+pretraining, imbalance-robust loss functions, and test-time adaptation).
+This step produced the concrete techniques implemented in Steps Sixteen
+through Nineteen, and is also why the final report explicitly separates
+"papers that drove an implemented experiment" from the nineteen "reviewed
+but unused" papers -- so that the literature review's actual yield is
+auditable rather than merely asserted.
+
+================================================================================
+STEP SIXTEEN -- PERMUTATION SIGNIFICANCE TEST (AND THE ERROR DISCOVERED
+WITHIN IT)
+================================================================================
+WHAT: A trial-within-subject label-shuffling permutation test (three hundred
+shuffles per task, using Logistic Regression as a fast stand-in model) was
+built to formally test whether the observed Area Under the Curve values are
+distinguishable from a properly constructed chance-level null distribution.
+
+WHY THIS TEST WAS NEEDED AT ALL: every previous section reported single-
+point-estimate Area Under the Curve values without a rigorous null-
+hypothesis test. A single-run Area Under the Curve of, for example, zero
+point five six one "looks" different from zero point five, but without a
+properly constructed null distribution there is no way to know whether that
+difference is statistically genuine or merely fold-to-fold noise. This test
+was added specifically to place the project's central claim (that the
+results sit near random chance) on formal statistical footing, rather than
+relying on numbers judged by eye.
+WHY TRIAL-LEVEL PERMUTATION, RATHER THAN WINDOW-LEVEL PERMUTATION, WAS
+REQUIRED -- THE ERROR AND ITS CORRECTION: the first version of this test
+shuffled all nineteen thousand two hundred window-level labels
+independently of one another. This was discovered to be a methodological
+error: a single trial's fifteen windows share one true label and are not
+independent observations, so treating them as independently exchangeable
+artificially shrank the spread of the null distribution (a standard
+deviation of approximately zero point zero zero five), which in turn
+inflated every resulting standard score, including a since-retracted claim
+that three of the four tasks scored significantly below chance. The
+correction was to permute at the trial level (each subject keeps its own
+true set of forty trial labels; only which trial receives which label is
+shuffled) and then to propagate each shuffled label to all fifteen windows
+belonging to that trial, which preserves each subject's genuine, imbalanced
+trial counts and the underlying structure in which each window belongs to
+exactly one trial. This was treated as important enough to fix and re-report
+explicitly (rather than quietly patched over and forgotten) because it
+directly affects the project's single most load-bearing statistical claim.
+RESULT AFTER THE CORRECTION: the corrected null distribution, roughly five
+times wider than before, showed that the valence, arousal, and liking
+tasks' observed Area Under the Curve values are no longer distinguishable
+from chance (probability values ranging from zero point eight seven seven
+to zero point nine nine seven); the dominance task's small apparent excess
+(probability value zero point zero one nine nine) does not survive a
+Bonferroni correction for testing four separate tasks. This became the
+project's central, formally supported conclusion, and the earlier
+overstated claim is kept in the report and explicitly labeled as retracted,
+for the sake of transparency, rather than silently deleted.
+
+================================================================================
+STEP SEVENTEEN -- CORRELATION ALIGNMENT FEATURE ADAPTATION
+================================================================================
+WHAT: Correlation Alignment (whitening each training fold's features using
+their own covariance, then recoloring them using the unlabeled testing
+fold's covariance) was implemented and tested across twelve task-and-model
+combinations.
+
+WHY: This is the first literature-sourced domain-adaptation technique tried
+(the yield of Step Fifteen), targeting a specific hypothesis: that subject
+shift is a second-moment, that is to say covariance-based, distribution
+shift that can be corrected on a per-fold basis, after the Differential
+Entropy features have already been computed.
+RESULT AND JUSTIFICATION FOR THE NEXT STEP: the mean change was small and
+inconsistent (plus zero point zero zero five nine on average, with eight of
+twelve combinations improving and four of twelve worsening) -- Correlation
+Alignment alone was not the answer, which motivated trying (a) a different,
+more aggressive alignment mechanism (Step Nineteen's Euclidean Alignment)
+and (b) a structurally different kind of intervention altogether, namely
+adversarial training (Step Eighteen).
+
+================================================================================
+STEP EIGHTEEN -- SUBJECT-ADVERSARIAL (DOMAIN-ADVERSARIAL NEURAL NETWORK)
+TRAINING
+================================================================================
+WHAT: A Gradient-Reversal-Layer-based subject classifier was added to
+EEGNet, using the standard progressive-lambda training schedule described by
+Ganin and Lempitsky, in order to force the shared encoder toward
+representations that are invariant to which subject produced them.
+
+WHY: Where Correlation Alignment corrects covariance after the fact, the
+Domain-Adversarial Neural Network approach was chosen to test whether
+directly training the network to be subject-invariant (rather than applying
+a post-hoc feature correction) would help more. This represents a
+qualitatively different class of intervention than anything tried in Steps
+Nine through Seventeen, and was worth testing specifically because the
+covariance-alignment approach (Step Seventeen) had underperformed.
+WHY THE RESULT WAS KEPT DESPITE FAILING ON TWO OF THE FOUR TASKS: the
+valence and liking tasks improved (by plus zero point zero three nine and
+plus zero point zero five zero respectively), but the arousal and dominance
+tasks collapsed (by minus zero point two one six and minus zero point one
+four nine respectively, with precision and recall both pinned near zero
+point five zero). An initial error in the validation data loader (a
+mismatch in how a tuple of values was being unpacked) was found and fixed
+first; the collapse in performance persisted even after that fix, which is
+what justified concluding that this is a genuine training-dynamics
+phenomenon (matching a documented failure pattern described in the
+literature, namely that over-aggressive alignment can collapse class
+structure) rather than a residual implementation error. Distinguishing a
+genuine phenomenon from a bug was worth the extra verification effort,
+because reporting a training failure as a "finding" would have been
+incorrect if it had actually been caused by broken code.
+
+================================================================================
+STEP NINETEEN -- FIVE DEFERRED LITERATURE TECHNIQUES (EUCLIDEAN ALIGNMENT,
+SELF-SUPERVISED LEARNING, AREA-UNDER-THE-CURVE-MARGIN LOSS, ADAPTIVE BATCH
+NORMALIZATION, SHAPLEY ADDITIVE EXPLANATIONS)
+================================================================================
+WHAT: Five further literature-motivated techniques were implemented:
+Euclidean Alignment; self-supervised pretraining in the style of a Time-
+Frequency Representation; an Area-Under-the-Curve-margin training loss
+function; Adaptive Batch Normalization used as a test-time adaptation
+method; and a SHapley Additive exPlanations interpretability diagnostic.
+
+WHY EACH ONE WAS CHOSEN, SPECIFICALLY:
+- Euclidean Alignment: chosen as a stronger alternative to Correlation
+  Alignment -- it operates upstream, on a per-subject basis, on the raw
+  channel covariance before the Differential Entropy features are even
+  computed, rather than downstream and on a per-fold basis as Correlation
+  Alignment does. It was tried because Correlation Alignment's weak result
+  (Step Seventeen) suggested that the correction needed to happen earlier in
+  the pipeline, closer to the raw signal, rather than after feature
+  extraction.
+  RESULT: this is the strongest and most consistent effect found in the
+  entire project (a mean improvement of plus zero point zero four four Area
+  Under the Curve, with a consistent direction of improvement across three
+  of the four tasks), which is why it is singled out as the project's
+  headline positive result.
+- Self-supervised pretraining: this tests whether a label-free pretext task
+  (predicting a given window's own frequency-band power directly from the
+  raw signal) can give EEGNet a better starting point than random weight
+  initialization, addressing the hypothesis that limited labeled data (not
+  only subject shift) constrains performance.
+- Area-Under-the-Curve-margin loss: this tests a targeted fix for the
+  specific mechanism diagnosed in Step Eight -- that high accuracy paired
+  with low Area Under the Curve on imbalanced tasks reflects a collapse
+  toward predicting only the majority class under the standard cross-entropy
+  loss function. A pairwise hinge loss function that directly optimizes for
+  Area Under the Curve was chosen because it is, by construction,
+  insensitive to class imbalance, directly addressing that diagnosed
+  mechanism rather than guessing at a generic fix.
+  RESULT: the valence task (the most imbalanced, most collapse-prone task)
+  improved the most (plus zero point zero eight three), which is presented
+  as the one intervention in the whole project with a clearly understood
+  causal mechanism, precisely because the fix targeted a specific,
+  previously diagnosed failure mode.
+- Adaptive Batch Normalization as test-time adaptation: this tests whether
+  simply recomputing the running statistics of every Batch Normalization
+  layer using only the unlabeled target subject's own windows, with no
+  gradient updates and no labels, captures any of the same benefit as full
+  retraining or calibration (Step Fourteen), at close to zero additional
+  computational cost.
+- SHapley Additive exPlanations diagnostic: added specifically to answer a
+  question that none of the numeric Area-Under-the-Curve experiments could
+  answer: which features are actually driving the model's predictions?
+  Extreme Gradient Boosting, together with its exact TreeExplainer
+  algorithm, was chosen because that explanation algorithm is exact and
+  computationally cheap only for tree-based ensemble models, making it the
+  practical choice for this diagnostic. This was run to directly test the
+  frontal-alpha-asymmetry hypothesis raised by TSception's design (Step
+  Six): does a named neurophysiological feature (frontal and hemispheric
+  alpha asymmetry) actually matter in practice? Finding that this feature
+  family carries the smallest importance share of any feature family on
+  every task is a meaningful, independent corroboration of TSception's
+  underperformance on the valence task -- two different methods agreeing
+  with one another is stronger evidence than either result alone, which is
+  exactly why this diagnostic was worth running.
+
+================================================================================
+STEP TWENTY -- DOES CORRELATION ALIGNMENT STACK ON TOP OF EUCLIDEAN
+ALIGNMENT?
+================================================================================
+WHAT: Four conditions were compared, all on the Differential-Entropy-only
+feature set: no alignment at all, Correlation Alignment alone, Euclidean
+Alignment alone, and Euclidean Alignment followed by Correlation Alignment.
+
+WHY: Once Euclidean Alignment was found to be the strongest single
+intervention (Step Nineteen), the natural follow-up question was whether
+combining it with the other alignment technique already tried (Correlation
+Alignment, Step Seventeen) would compound the benefit. This is an
+inexpensive, direct test of technique-stacking, rather than leaving that
+question unanswered.
+RESULT AND JUSTIFICATION: stacking did not help (Euclidean Alignment
+combined with Correlation Alignment reached zero point five one four,
+compared with zero point five two three for Euclidean Alignment alone); the
+practical recommendation is to use Euclidean Alignment alone. The likely
+explanation offered is that Euclidean Alignment's per-subject, raw-signal
+whitening already removes most of the between-subject covariance structure
+that Correlation Alignment also targets, so Correlation Alignment's
+remaining correction acts mostly on noise -- a specific, falsifiable
+hypothesis, rather than a vague statement that "it simply did not help."
+
+================================================================================
+STEP TWENTY-ONE -- ADDING THE MODEL-BY-MODEL ANALYSIS CHAPTER
+================================================================================
+WHAT: After all eighteen notebook sections were complete, a dedicated
+chapter was added that goes through every one of the ten base models
+individually, explaining why each one scored what it scored in terms of its
+own underlying mechanism, together with a cross-model synthesis section and
+a section tracing every later variant or extension back to which base model
+it reuses.
+
+WHY: The existing report already contained all of the numbers, but numbers
+alone answer "what happened," not "why did each specific algorithm behave
+this way." This chapter was added because the project's most important
+claim -- that ten structurally different models all converge on the same
+performance ceiling -- is only convincing if it is shown to hold true model
+by model, rather than only as an aggregate statistic. It also allowed the
+project to make an argument that requires viewing every model side by side:
+that the performance ceiling is more consistent with a property of the
+labels and of subject shift than with any single model's expressive
+capacity, since swapping between entirely different model families (linear,
+tree-based, kernel-based, and deep-learning-based) never produced an escape
+from that narrow band. The "beyond the base ten" section was added on top of
+that (as a separate, later commit) specifically so that every one of the
+extension experiments in Steps Nine through Twenty -- which are not new
+models, but modified retrainings of the same base ten models -- could be
+explained through the lens of the base model's already-diagnosed mechanism,
+rather than treated as unrelated, standalone results.
+
+================================================================================
+STEP TWENTY-TWO -- FIXING REPORT CITATION AND BIBLIOGRAPHY GAPS, AND
+RECONCILING AREA-UNDER-THE-CURVE PERFORMANCE-CEILING CLAIMS
+================================================================================
+WHAT: A pass was made through the finished report to fix missing or
+inconsistent citation and bibliography entries, and to reconcile claims
+about the Area Under the Curve performance ceiling that had drifted slightly
+out of agreement with one another across sections written at different
+times.
+
+WHY: A report built incrementally across eighteen or more sections, plus an
+additional chapter, risks small inconsistencies accumulating -- a claim
+stated one way in the Discussion section (Step Eight) and stated slightly
+differently by the time the Model-by-Model chapter (Step Twenty-One) was
+written, or a citation referenced in the main text but missing from the
+bibliography. This pass exists purely for internal consistency and academic
+correctness: a technical report's credibility depends on its claims and its
+citations being verifiably consistent throughout, especially given that this
+report explicitly positions itself as something that "can be expanded into
+a formal report or thesis chapter."
+
+================================================================================
+STEP TWENTY-THREE -- FIXING THE TRIAL-INDEPENDENCE ERROR IN THE PERMUTATION
+SIGNIFICANCE TEST
+================================================================================
+WHAT: (Already detailed under Step Sixteen above, but restated here because
+it was committed as its own, later, standalone fix.) The permutation test's
+label-shuffling procedure was corrected from window-level shuffling to
+trial-level shuffling.
+
+WHY THIS WAS TREATED AS SEPARATE, DELIBERATE, LATE-STAGE WORK: this error
+was discovered after the significance test had already been reported once,
+meaning an already-reported-looking claim ("three tasks score significantly
+below chance") had to be walked back. Rather than quietly adjusting the
+number, the project explicitly kept the old, erroneous result in the report,
+clearly labeled as retracted, alongside the corrected result and an
+explanation of exactly why the error inflated statistical significance
+(treating fifteen correlated windows belonging to one trial as fifteen
+independent observations shrinks the apparent variance of the null
+distribution, which inflates every resulting standard score). This is the
+most safety-critical fix in the whole project: an unnoticed statistical
+error here would have allowed the final report to claim scientifically
+unsupported below-chance effects. Fixing it, and explaining the mechanism of
+the fix rather than concealing it, protects the credibility of the report's
+central statistical claim.
+
+================================================================================
+STEP TWENTY-FOUR -- FINAL SYNTHESIS: WHAT WAS ACCOMPLISHED, WHAT WAS LEFT
+UNDONE, AND WHAT WAS CONCLUDED
+================================================================================
+WHY THE PROJECT IS STRUCTURED AS A NEGATIVE-RESULT CAMPAIGN:
+The project's headline finding is not a high accuracy number -- it is that
+subject-independent emotion classification on the Database for Emotion
+Analysis using Physiological Signals sits close to random chance (an Area
+Under the Curve ranging from zero point two nine to zero point six one)
+across ten structurally different models, and that this performance ceiling
+survives at least eight independent, deliberately chosen interventions
+(Steps Nine through Twenty). This was a conscious choice: rather than tuning
+parameters until a good-looking number appeared, each step tested one
+specific, falsifiable hypothesis for the performance ceiling and reported
+the outcome honestly, including cases where an intervention made results
+worse (the Domain-Adversarial Neural Network's collapse, Adaptive Batch
+Normalization's net-negative effect) or did essentially nothing (Correlation
+Alignment, richer features, window overlap). The value of the project lies
+in the systematic process of elimination itself: by the end, richer
+features, cross-validation rigor, additional data, label definition, and
+several literature-backed alignment and adaptation techniques have all been
+ruled out one at a time, which is a much stronger form of evidence than a
+single, untested intervention succeeding by chance would have been.
+
+WHY THE CROSS-CORPUS RESULT (STEP TWELVE) IS THE PROJECT'S MOST IMPORTANT
+ADDITION:
+Every other step could only ever conclude "this does not fix the
+performance ceiling within the Database for Emotion Analysis using
+Physiological Signals." Only the comparison against the Shanghai Jiao Tong
+University Emotion Electroencephalogram Dataset, version four, could
+distinguish between "the performance ceiling is a general property of this
+problem" and "the performance ceiling is specific to this particular
+dataset." Finding a moderate zero point six seven three Area Under the Curve
+on that second dataset, under an identical pipeline, is what allows the
+final conclusion to be the more specific, more useful claim (the performance
+ceiling may be specific to the Database for Emotion Analysis using
+Physiological Signals) rather than the more sweeping, less well-supported
+claim (that subject-independent Electroencephalogram emotion decoding is
+inherently close to random chance in general).
+
+WHY THE "WHAT WAS NOT DONE" AND "WHAT COULD HAVE BEEN DONE DIFFERENTLY"
+CHAPTERS EXIST: these were written deliberately, not as an afterthought,
+because a report that lists only successes is less useful and less
+trustworthy than one that also states its scope limitations (the two gated
+datasets never obtained due to restricted access; a full Leave-One-Subject-
+Out evaluation never run for Track Two, due to a computational cost ten to
+thirty times higher; a calmer training schedule for the Domain-Adversarial
+Neural Network never re-tried) and its process lessons (the literature log
+should have been written incrementally, as papers were processed, rather
+than in a single pass at the end; the setting that selects the Graphics
+Processing Unit as the computation device for Extreme Gradient Boosting
+should have been standardized from the start across every script; the
+adapter for the Shanghai Jiao Tong University Emotion Electroencephalogram
+Dataset, version four, should have been prototyped against a small synthetic
+example before the real download was obtained). Recording these limitations
+explicitly is what makes the project's negative results credible rather than
+merely convenient, and gives a concrete starting point for anyone continuing
+this work in the future.
+
+================================================================================
+STEP TWENTY-FIVE -- AUDITING THE FINISHED REPORT FOR COMPLETENESS, AND FIXING
+WHAT WAS MISSING
+================================================================================
+WHAT: After the report was considered finished, every script file, every
+results table in comma-separated-value format, every figure in Portable
+Network Graphics format, every literature document, and every root-level
+tracking file actually present in the repository was compared, one by one,
+against what Project_Report.tex actually described. The goal was to check
+whether the written report was a complete and accurate record of the work,
+rather than an approximate one. Several concrete gaps were found and fixed
+directly inside the report itself, in the same tone and the same table and
+figure style already used throughout, rather than being left as a separate
+errata note.
+
+WHY THIS AUDIT WAS DONE AT ALL: every earlier step in this log describes
+work that was reasoned about once and then written up once. None of those
+earlier steps checked whether the write-up itself stayed accurate and
+complete as the report grew across many separate editing passes -- Steps
+Twenty-One through Twenty-Three already caught and fixed two such drift
+problems (a missing analytical chapter, and a statistical error), which
+was itself the signal that a full, systematic pass was worth doing rather
+than assuming those two fixes were the only ones needed. This step
+generalizes that same discipline into a complete audit: instead of trusting
+that everything that was done had necessarily been written down correctly,
+every underlying data file was reread from disk and cross-checked against
+the sentences and tables that were supposed to summarize it.
+
+WHAT WAS FOUND, AND WHY EACH FINDING MATTERED:
+
+- A genuine factual error, not merely a missing detail: the Cross-Corpus
+  Validation section claimed that fourteen minus two, that is to say twelve,
+  of the fifteen held-out subjects in the Shanghai Jiao Tong University
+  Emotion Electroencephalogram Dataset, version four, Leave-One-Subject-Out
+  evaluation scored above zero point five five Area Under the Curve.
+  Rereading the underlying results file directly (rather than trusting the
+  previously written summary sentence) showed the true count is fourteen of
+  fifteen; only one subject, at zero point five one five, falls below that
+  line. This was corrected in the report, and the full fifteen-subject
+  breakdown table was added immediately below the corrected sentence, so
+  that the claim is no longer just asserted but independently checkable by
+  any reader from the report alone. This was treated as the single most
+  important finding of the audit, because it is not a completeness gap but
+  an outright incorrect number that had been sitting in a supposedly
+  finished report.
+- A systemic section-numbering inconsistency: the "Consolidated Results"
+  chapter (its master results table and its figures-index paragraph) cited
+  section numbers that were, in every single instance, exactly two lower
+  than the actual section labels used everywhere else in the document. For
+  example, Euclidean Alignment was cited there as "Section fifteen point
+  one" when the real, current section is "Section seventeen point one."
+  This almost certainly happened because two sections were inserted earlier
+  in the document after that chapter was first written, shifting every
+  later section number up by two, without that chapter's citations being
+  updated to match. Every one of these citations was corrected, and the one
+  section that had no formal label at all ("Combined comparative analysis")
+  was given one, so it could be correctly and permanently referenced. This
+  mattered because a reader following a cross-reference to the wrong section
+  would end up at unrelated content, silently undermining trust in every
+  other cross-reference in the report.
+- Three results that had already been computed, but were never shown as
+  tables: a full nested-cross-validation comparison (all eight combinations
+  of two models and four tasks, tuned against fixed hyperparameters) had
+  only one of its eight cells quoted in prose; the exact, per-task
+  percentages behind the SHapley Additive exPlanations feature-family
+  importance discussion had only been given as vague ranges; and the
+  fifteen-subject breakdown behind the cross-corpus Leave-One-Subject-Out
+  result (already covered above) had not been shown at all. In each case,
+  the underlying comma-separated-value file already existed on disk from
+  when the experiment was originally run; the gap was only in the report,
+  not in the underlying work. Proper tables, formatted identically to every
+  other table already in the report, were added for all three, so that the
+  prose claims are no longer just summaries of numbers the reader cannot
+  see for themselves.
+- Undocumented repository files: three real, useful files at the root of
+  the repository -- the script-to-notebook execution map, the flat citation
+  list, and the per-paper literature log -- were never mentioned anywhere in
+  the report, even though the execution map in particular is the
+  authoritative record of how to reproduce every table and figure from a
+  clean checkout, including a concrete rough edge it documents (three
+  builder scripts that still hardcode an old, no-longer-valid file path).
+  All three files were added to the Repository Structure chapter's file
+  tree, and a new, dedicated Appendix section was written explaining what
+  the execution map covers and why it should be trusted over hand-written
+  prose if the repository ever changes after this report is written.
+
+WHY THE FIXES WERE MADE DIRECTLY IN THE REPORT, RATHER THAN LOGGED AS A
+SEPARATE LIST OF CORRECTIONS: the whole point of the earlier trial-
+independence fix (Step Twenty-Three) and the earlier citation-and-
+bibliography fix (Step Twenty-Two) was that a report's credibility depends
+on the report itself being correct and complete, not on a separate document
+explaining where it falls short. Keeping that same discipline here means
+the corrected subject count, the corrected section numbers, the three new
+tables, and the three newly documented files now live inside
+Project_Report.tex itself, in the same voice and the same formatting
+conventions as everything around them, rather than being described only in
+a document like this one that a reader of the report itself might never see.
+After every change, the report was recompiled from source to confirm it
+still builds without errors and without any broken or undefined
+cross-references, precisely so that "the report was fixed" is a verified
+fact and not just a claim.
+
+================================================================================
+STEP TWENTY-SIX -- EXPANDING EVERY THIN SECTION WITH SUBSTANTIVE EXPLANATION
+AND ADDING PROPER CITATIONS THROUGHOUT
+================================================================================
+WHAT: After the completeness audit in Step Twenty-Five, the report was read
+through once more with a different question in mind: not "is anything
+missing," but "does every section actually explain itself, or does it merely
+state a number and move straight to a table or a figure." Several sections
+were found to do the latter -- two or three sentences of setup followed
+immediately by a table, with no explanation of why that experiment was
+designed the way it was, why that particular choice was made over an
+available alternative, or what a reader should take away from the numbers
+before moving on. Substantial explanatory paragraphs were added to every
+such section, and, separately, thirteen new bibliography entries were added
+so that technical claims that had been stated as bare fact -- which
+classical model does what, why a particular signal-processing choice was
+made, why a particular feature family was included -- now point to the
+original published source of that idea rather than standing unsupported.
+
+WHY THIS WAS DONE AS ITS OWN, SEPARATE PASS: Step Twenty-Five's audit
+checked whether the report was complete and correct -- whether every result
+that existed was shown, and whether every shown number was accurate. It did
+not check whether the report was well explained. A report can be complete
+and correct while still reading as a sequence of terse, unexplained
+assertions: "six models, evaluated with five-fold Grouped K-Fold
+Cross-Validation, capped at eight thousand samples" is a complete and
+accurate sentence, but it does not tell a reader why those six models were
+chosen over other classical algorithms, or why that particular
+cross-validation scheme was preferred over a simpler, ungrouped one. Treating
+"is it complete" and "is it explained" as two separate questions, checked in
+two separate passes, is the same discipline behind every earlier fix in this
+log: each pass asks one specific question rather than a vague "is this
+good," which makes it possible to say concretely, afterward, what changed
+and why.
+
+WHICH SECTIONS WERE EXPANDED, AND WHY EACH ONE SPECIFICALLY NEEDED IT:
+
+- The Data and Preprocessing section previously stated the window length,
+  the frequency-band edges, and the Differential Entropy formula without
+  explaining why those specific choices were made rather than some other
+  reasonable set of choices. A paragraph was added explaining that these
+  conventions follow the dominant practice in the Electroencephalogram
+  emotion-recognition literature specifically so that the Area Under the
+  Curve numbers in this report remain comparable to published work, rather
+  than being an artifact of an idiosyncratic preprocessing pipeline that no
+  other paper's numbers could be checked against. A citation to the original
+  paper establishing Differential Entropy as an Electroencephalogram emotion
+  feature was added, along with citations for the Butterworth filter, the
+  scikit-learn software library, and the PyTorch software library, all of
+  which had been used by name throughout the report without ever being
+  formally cited.
+- The Class Balance section previously stated the four tasks' class
+  percentages and asserted, without elaboration, that accuracy could be
+  misleading under imbalance. A paragraph was added explaining precisely why
+  that is true (a classifier that always predicts the majority class scores
+  well by accuracy while learning nothing), tying that explanation to a
+  paper already in the literature corpus that documents this exact failure
+  pattern recurring in published work on this same dataset, and tracing the
+  consequence forward to the specific later result (Track Two's high valence
+  accuracy at a much lower Area Under the Curve) that this section's
+  reasoning predicts.
+- The Track One section previously named its six classical models and its
+  evaluation protocol without explaining why those six algorithms, spanning
+  different underlying assumptions, were chosen together, or why grouping
+  the cross-validation by subject was preferred over an ungrouped split. A
+  paragraph was added explaining both choices, with a citation for each of
+  the four classical algorithms that did not yet have one (k-Nearest
+  Neighbors, Random Forest, the Support Vector Machine, and Extreme Gradient
+  Boosting), since stating "Random Forest" as a method name without pointing
+  to the paper that introduced it left a technical claim effectively
+  unsupported.
+- The Track Two section's model-architecture and training-procedure
+  subsections previously listed the four deep architectures and the training
+  settings without explaining the reasoning behind either. Paragraphs were
+  added explaining why these four architectures together span a useful range
+  of design choices, why every architecture was implemented from scratch
+  rather than importing an existing implementation, and why the particular
+  optimization algorithm and early-stopping policy were chosen given how
+  small some of these networks are, with citations added for that
+  optimization algorithm and for the PyTorch software library.
+- The Combined Comparative Analysis section was, before this pass, only two
+  or three sentences describing what was plotted, with no explanation of why
+  this step existed at all or what a reader should look for in the result. A
+  full paragraph was added explaining that this section is what turns two
+  separately reported result sections into a direct answer to the report's
+  central comparative question, and telling the reader specifically how to
+  read the accompanying figures.
+- The introduction to the Richer Track One Features section previously
+  listed three additional feature families without explaining what
+  each one captures that the baseline feature could not, or why each was
+  chosen. A paragraph was added explaining that every added family targets a
+  specific kind of structure the baseline feature discards by construction,
+  with citations added for the two named feature families that draw on a
+  specific published methodology.
+- The Literature Review's "papers reviewed but not tied to a specific
+  experiment" section, the Consolidated Results chapter, and each of the
+  four short, list-only closing chapters (Accomplished, Not Done, Could Have
+  Been Done Differently, Challenges Faced) previously opened directly into a
+  bulleted or tabular list with no framing paragraph explaining why that
+  chapter exists, how it differs from the chapters around it, or how a
+  reader should use it. A short framing paragraph was added to each,
+  explaining its specific purpose and its relationship to the chapters
+  immediately before and after it, so that a reader arriving at any of these
+  sections understands why it is organized the way it is before reading the
+  list itself.
+
+WHY THIRTEEN NEW CITATIONS WERE ADDED, SPECIFICALLY, RATHER THAN LEFT AS
+PLAIN TECHNICAL PROSE: a report that states "Random Forest" or "Differential
+Entropy" as if these were self-evident, uncontested facts, without pointing
+to where they came from, is harder for a reader to independently verify or
+build on than one that treats every named method as a citable claim. Adding
+these thirteen entries -- covering the four previously-uncited classical
+algorithms, the Differential Entropy feature itself, the Hjorth parameters
+and frontal-alpha-asymmetry and phase-locking-value feature families, the
+interpretability method used for the SHapley Additive exPlanations
+diagnostic, the optimization algorithm used to train every Track Two model,
+the two software libraries used throughout the entire project, and the
+signal-processing filter used in every feature-extraction step -- closes
+that gap without changing a single reported number, because these are all
+citations for methods that were already being used, not new methods being
+introduced.
+
+WHY THIS MATTERS FOR THE PROJECT AS A WHOLE: taken together with Step
+Twenty-Five's completeness audit, this pass means the report can no longer
+be fairly criticized either for omitting a result that exists on disk, or
+for stating a technical claim without grounding it in either this project's
+own data or the published literature that motivated it. Every change was
+made directly inside Project_Report.tex, in the same first-person, direct,
+technical voice as the surrounding text, and the report was recompiled from
+source afterward to confirm it still builds without errors and without any
+broken or undefined cross-reference, for the same reason given in Step
+Twenty-Five: a claim that a document was improved is only as trustworthy as
+the verification behind it.
+
+================================================================================
+END OF LOG
+================================================================================

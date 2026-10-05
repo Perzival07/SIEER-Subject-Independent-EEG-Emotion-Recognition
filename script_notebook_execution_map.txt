@@ -1,0 +1,160 @@
+SCRIPT <-> NOTEBOOK EXECUTION MAP
+==================================
+What actually runs, in what order, and how a script's output reaches the
+notebook. There is no automation wiring any of this together -- no cell
+calls a script, no script calls the notebook. Everything below is a manual
+sequence: you run a script from a terminal, it writes a .npz/.csv/.png file
+to processed_cache/ or results/, and a *separate* notebook cell later reads
+that file with np.load / pd.read_csv / an <img> include. If you skip a
+script, the notebook cell that depends on it will crash on a missing file,
+or silently display stale results if an old copy of the file is still
+sitting on disk.
+
+TIER 0 -- data-cache builders (raw .dat -> processed_cache/*.npz)
+-------------------------------------------------------------------
+These three read the raw DEAP `data_preprocessed_python/sXX.dat` files
+directly. They do not depend on the notebook having been run first.
+NOTE: all three still hardcode `DATA_DIR/CACHE_DIR = Path(r"D:/EEG/...")`,
+the project's old location, unlike track_a_significance_test.py, which was
+already fixed to a relative REPO_ROOT-based path. Fix these paths (or run
+from that old location) before running them here.
+
+  scripts/build_extended_features.py
+      -> processed_cache/deap_features_ext_v1.npz   (DE+Hjorth+FAA+connectivity)
+      consumed by: notebook cell 35 (Sec 9) directly, and by every
+      track_a_*.py script below except track_a_riemannian_alignment.py and
+      track_a_ea_coral_stacked.py (those two use the raw-window cache instead).
+
+  scripts/build_raw_ratings.py
+      -> processed_cache/deap_raw_ratings_v1.npz    (continuous 1-9 SAM ratings)
+      depends on: deap_features_ext_v1.npz (reads its `groups` array)
+      consumed by: scripts/track_a_label_cleanup.py only.
+
+  scripts/build_overlap_windows.py
+      -> processed_cache/deap_windows_4s_overlap50_32subj_v1.npz
+      consumed by: scripts/track_b_repeated.py only (feeds notebook cell 44,
+      Sec 11).
+
+  (The base, non-overlap window cache --
+  processed_cache/deap_windows_4s_{N}subj_v2.npz -- is NOT built by a
+  script. Notebook cell 9 (Sec 3) builds it itself the first time it runs,
+  then reuses the cached file on every later run. track_a_riemannian_
+  alignment.py, track_a_ea_coral_stacked.py, and all four track_b_*.py
+  literature-intervention scripts read this notebook-built cache, so cell 9
+  must have been executed at least once before those scripts will run.)
+
+TIER 1 -- companion experiment scripts (-> results/tables/*.csv, some also
+-> results/figures/*.png)
+-------------------------------------------------------------------
+Run in any order relative to each other -- none of them depend on each
+other, only on the Tier-0 caches above. Each is a single
+`python scripts/<name>.py` invocation from the repo root.
+
+  Notebook Sec 9  (cell 35-37)   <- scripts/track_a_ablation.py
+      writes: track_a_ablation_results.csv, track_a_ablation_auc.png
+      needs:  deap_features_ext_v1.npz
+
+  Notebook Sec 10 (cell 39-41)   <- scripts/track_a_repeated_nested_cv.py
+      writes: track_a_repeated_groupkfold.csv, track_a_nested_cv.csv,
+              track_a_repeated_cv_auc_ci.png
+      needs:  deap_features_ext_v1.npz
+
+  Notebook Sec 11 (cell 43-44)   <- scripts/track_b_repeated.py
+      writes: track_b_repeated_overlap_comparison.csv,
+              track_b_overlap_vs_nonoverlap_auc.png
+      needs:  deap_windows_4s_32subj_v2.npz (notebook-built) AND
+              deap_windows_4s_overlap50_32subj_v1.npz (build_overlap_windows.py)
+
+  Notebook Sec 12 (cell 46-47)   <- scripts/cross_corpus/run_cross_corpus.py
+      writes: cross_corpus_deap_to_seediv_summary.csv,
+              cross_corpus_deap_to_seediv_per_subject.csv,
+              cross_corpus_seediv_loso.csv, cross_corpus_deap_seediv.png
+      needs:  raw DEAP .dat files + downloaded seed-dataset/ (SEED-IV);
+              imports scripts/cross_corpus/base.py and seed_adapter.py
+              (not run directly, only imported)
+
+  Notebook Sec 14 (cell 50-51)   <- scripts/track_a_label_cleanup.py
+      writes: track_a_label_cleanup_results.csv, track_a_label_cleanup_auc.png
+      needs:  deap_features_ext_v1.npz + deap_raw_ratings_v1.npz
+
+  Notebook Sec 15 (cell 53-54)   <- scripts/track_a_calibration_loso.py
+      writes: track_a_calibration_loso.csv, track_a_calibration_per_subject.png
+      needs:  deap_features_ext_v1.npz
+
+  Notebook Sec 16.1 (cell 57-58) <- scripts/track_a_significance_test.py
+      writes: track_a_significance_test.csv, track_a_significance_test.png
+      needs:  deap_features_ext_v1.npz
+      note:   ~10-11 min per task x 4 tasks (300 permutations x GroupKFold(5)
+              each) = ~40-45 min total. Only script in the repo already
+              migrated to relative (REPO_ROOT-based) paths.
+
+  Notebook Sec 16.2 (cell 60-61) <- scripts/track_a_domain_alignment.py
+      writes: track_a_domain_alignment.csv, track_a_domain_alignment_auc.png
+      needs:  deap_features_ext_v1.npz
+
+  Notebook Sec 16.3 (cell 63-64) <- scripts/track_b_domain_adversarial.py
+      writes: track_b_domain_adversarial.csv, track_b_domain_adversarial_auc.png
+      needs:  deap_windows_4s_32subj_v2.npz (notebook-built)
+
+  Notebook Sec 17.1 (cell 68-69) <- scripts/track_a_riemannian_alignment.py
+      writes: track_a_riemannian_alignment.csv, track_a_riemannian_alignment_auc.png
+      needs:  deap_windows_4s_32subj_v2.npz (notebook-built; operates on raw
+              windows, recomputes DE itself after alignment)
+
+  Notebook Sec 17.2 (cell 71-72) <- scripts/track_b_ssl_pretrain.py
+      writes: track_b_ssl_pretrain.csv, track_b_ssl_pretrain_auc.png
+      needs:  deap_windows_4s_32subj_v2.npz (notebook-built)
+
+  Notebook Sec 17.3 (cell 74-75) <- scripts/track_b_auc_maximization.py
+      writes: track_b_auc_maximization.csv, track_b_auc_maximization_auc.png
+      needs:  deap_windows_4s_32subj_v2.npz (notebook-built)
+
+  Notebook Sec 17.4 (cell 77-78) <- scripts/track_b_test_time_adaptation.py
+      writes: track_b_test_time_adaptation.csv, track_b_test_time_adaptation_auc.png
+      needs:  deap_windows_4s_32subj_v2.npz (notebook-built)
+
+  Notebook Sec 17.5 (cell 80-81) <- scripts/track_a_shap_diagnostic.py
+      writes: track_a_shap_diagnostic.csv, track_a_shap_summary_<task>.png (x4)
+      needs:  deap_features_ext_v1.npz
+
+  Notebook Sec 18   (cell 84-85) <- scripts/track_a_ea_coral_stacked.py
+      writes: track_a_ea_coral_stacked.csv, track_a_ea_coral_stacked_auc.png
+      needs:  deap_windows_4s_32subj_v2.npz (notebook-built)
+
+NOT PART OF THE RUN PIPELINE -- historical, one-off authoring scripts
+-------------------------------------------------------------------
+scripts/update_notebook.py, update_notebook_v2.py, ..._v3.py, ..._v4.py,
+..._v5.py were each run exactly once, in that order, during earlier stages
+of the project to *append new cells* into DEAP_Comparative_Analysis.ipynb
+(v1 added sections 9-11, v2 added 14-15, v3 added 16, v4 added 17, v5 added
+18). They mutate the .ipynb file itself via nbformat; they are not part of
+reproducing results and should not be re-run against the current notebook
+(they would duplicate or corrupt existing cells).
+
+RECOMMENDED RUN ORDER FROM A CLEAN CHECKOUT
+-------------------------------------------------------------------
+1. Open DEAP_Comparative_Analysis.ipynb, run cells top to bottom through at
+   least Sec 3 (cell 9) -- this builds the base window/DE cache that most
+   Tier-1 scripts and Sec 5-8's inline training depend on. Continuing
+   through Sec 8 also produces track_a_ml_results.csv / track_b_dl_results.csv
+   inline (no companion script for those -- they train live in-notebook).
+2. Fix the hardcoded D:/EEG paths in (or run from the original location of)
+   build_extended_features.py, build_raw_ratings.py, build_overlap_windows.py.
+3. python scripts/build_extended_features.py
+4. python scripts/build_raw_ratings.py            (needs step 3 first)
+5. python scripts/build_overlap_windows.py
+6. Run every Tier-1 script (any order): track_a_ablation.py,
+   track_a_repeated_nested_cv.py, track_b_repeated.py (needs step 5),
+   track_a_label_cleanup.py (needs step 4), track_a_calibration_loso.py,
+   track_a_significance_test.py (~40-45 min), track_a_domain_alignment.py,
+   track_b_domain_adversarial.py, track_a_riemannian_alignment.py,
+   track_b_ssl_pretrain.py, track_b_auc_maximization.py,
+   track_b_test_time_adaptation.py, track_a_shap_diagnostic.py,
+   track_a_ea_coral_stacked.py, cross_corpus/run_cross_corpus.py (needs
+   SEED-IV downloaded separately).
+7. Re-run the notebook's remaining cells (Sec 9 onward) top to bottom -- each
+   one just reads the CSV/PNG its companion script produced in step 6.
+
+Generated by inspecting the current repo state (script `to_csv`/`np.load`
+calls and notebook cell source) -- not hand-maintained, so re-derive it if
+scripts or notebook cells are added, removed, or renamed.

@@ -1,0 +1,81 @@
+CITATIONS — related/concurrent work for the DEAP subject-independent evaluation study
+========================================================================================
+Compiled 2026-08-27. These three papers were found via a web-literature check on the
+novelty of this notebook's central finding (accuracy on DEAP looks strong under naive
+splits but collapses to near-chance AUC/balanced-accuracy once genuine subject-independent
+evaluation is enforced). They are all 2026 publications, contemporaneous with this work,
+and should be cited in the paper as independent corroboration rather than treated as prior
+art this work failed to notice.
+
+--------------------------------------------------------------------------------------
+[1] Pandilova, E., Stojmenski, A., Chorbev, I., Petrov, M., Kitanovski, I., & Trajanov, D.
+    "Subject Identity Confounds qEEG Emotion Recognition on DEAP and DREAMER."
+    Sensors, 26(17), 5327 (2026). https://doi.org/10.3390/s26175327
+    https://www.mdpi.com/1424-8220/26/17/5327
+
+    Why added: This is the closest and sharpest concurrent match to this notebook's
+    core finding. On DEAP, they show epoch-pooled (leaky) evaluation gives ROC-AUC
+    0.689 (valence) / 0.711 (arousal), which collapses to 0.493 / 0.447 under
+    participant-independent evaluation — i.e., AUC at chance, matching this notebook's
+    ~0.45-0.56 range under GroupKFold. They go further than this notebook: the same
+    qEEG features identify *subject identity* with 0.998 accuracy on DEAP, and a
+    predictor using NO EEG at all (just each subject's training-set positive rate)
+    explains 42-84% of the "above-chance" discrimination models get credit for.
+    Cite this to (a) corroborate the near-chance AUC result with an independent
+    pipeline/lab, and (b) motivate why GroupKFold/subject-grouping alone is necessary
+    but not sufficient — subject-identity leakage can survive even grouped splits via
+    the features themselves. Directly relevant to Track A's DE/Hjorth/FAA/connectivity
+    features (same feature families they re-evaluate).
+
+--------------------------------------------------------------------------------------
+[2] Sadegh-Zadeh, S.-A., Saadat, S., Sadeghimanesh, Z., Soleymani, O., Movahhedi, T.,
+    Jarchi, D., & Saadat, M.
+    "Standard Accuracy in EEG Emotion Recognition Is Predictable from Class
+    Distribution Alone: A Systematic Analysis of Labelling Threshold Effects in the
+    DEAP Dataset."
+    Frontiers in Neuroinformatics, 20, Article 1830324 (2026).
+    https://doi.org/10.3389/fninf.2026.1830324
+
+    Why added: Near-identical scope to this notebook's Section 14 (label-cleanup
+    ablation), published as a standalone paper. They sweep the DEAP binarization
+    threshold (4.0-6.0) on valence/arousal under within-subject vs. cross-subject
+    (LOSO) protocols and show standard accuracy tracks the majority-class baseline
+    while balanced accuracy sits at/near chance (exactly 50% cross-subject at
+    thresholds >=4.5); threshold choice alone accounts for 14-23 percentage points of
+    reported accuracy on identical data. Cite this to support this notebook's
+    class-imbalance/labeling-threshold explanation for inflated accuracy (Sections 4,
+    13, 14) with an independent, threshold-focused replication, and to frame the
+    per_subject_z / drop_middle label variants here as extending their single-threshold
+    sweep to alternative label-construction strategies.
+
+--------------------------------------------------------------------------------------
+[3] Suo, H. & Li, Y.
+    "Evaluation Protocols and Cross-Subject Generalization in EEG Emotion Recognition."
+    arXiv:2607.27655 (submitted 2026-07-30). https://arxiv.org/abs/2607.27655
+
+    Why added: The field-level, protocol-focused version of this notebook's argument,
+    applied to SEED/SEED-IV rather than DEAP. They show training accuracy >0.99 vs.
+    held-out-participant accuracy of ~0.53 (SEED) / ~0.40 (SEED-IV), and propose a
+    three-layer reporting framework (target estimand / development procedure /
+    reporting specification) so subject-dependent, subject-disjoint, and cross-session
+    results aren't conflated. Cite this to (a) show the evaluation-protocol critique
+    generalizes beyond DEAP to other major EEG-emotion corpora (SEED), reinforcing that
+    this is a dataset-agnostic methodological issue, not a DEAP-specific quirk, and
+    (b) borrow their reporting recommendations (explicit target-data access, training-fit
+    diagnostics, pre-specified final evaluation) for how this notebook's own results
+    tables should be framed in the paper.
+
+--------------------------------------------------------------------------------------
+How these three fit together for the paper's related-work / discussion section:
+  - [1] and [2] are DEAP-specific and directly corroborate the near-chance AUC finding
+    from two different angles (subject-identity leakage vs. label-threshold artifact).
+  - [3] shows the same failure mode holds on SEED, generalizing the critique beyond DEAP.
+  - None of the three do the specific things this notebook does: (a) directly rebut a
+    named, recently published paper's reported numbers (Hasan & Islam, MethodsX 2025,
+    main.pdf) on matched features/classifiers, (b) cover all four DEAP label dimensions
+    (valence, arousal, dominance, liking) rather than just valence/arousal, or (c) run a
+    controlled head-to-head of 6 classical (DE+Hjorth+FAA+connectivity) vs. 4 deep-learning
+    (raw-window) models under one identical subject-independent protocol.
+  - Recommended framing: position this work as convergent, independent confirmation
+    (three groups reaching the same conclusion in 2026 strengthens credibility) plus a
+    named-paper rebuttal and broader dimension/model coverage as the added contribution.

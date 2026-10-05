@@ -1,0 +1,224 @@
+1. BEFORE PREPROCESSING (raw DEAP structure)
+---------------------------------------------
+
+- 32 subjects
+    => DEAP recorded 32 participants watching music videos. This is fixed
+       by the dataset itself, not something computed in this project.
+
+- 40 trials per subject
+    => Each participant watched 40 one-minute music-video clips, one trial
+       per clip. Also fixed by the dataset's experimental design.
+
+- "data" array shape: (40, 40, 8064)
+    dimension 1 = 40          -> the 40 trials (explained above)
+    dimension 2 = 40          -> 40 recorded channels total:
+                                    - first 32  = EEG electrode channels
+                                      (the standard 32-electrode DEAP montage)
+                                    - remaining 8 = peripheral physiological
+                                      signals (EOG, EMG, GSR, respiration,
+                                      temperature, etc.), which this project
+                                      drops because it is EEG-only analysis
+    dimension 3 = 8064        -> number of time samples per trial, derived as:
+                                    sampling rate (128 Hz, DEAP's own
+                                    pre-processed/downsampled rate — the
+                                    dataset's creators downsampled the
+                                    original 512 Hz recording to 128 Hz
+                                    before distributing this file)
+                                    x total trial duration (63 s)
+                                    = 128 x 63 = 8064 samples
+                                  The 63 s itself splits into:
+                                    - 3 s pre-trial baseline (no stimulus
+                                      shown yet, used later to remove DC
+                                      offset) -> 128 x 3 = 384 samples
+                                    - 60 s of actual stimulus (the 1-minute
+                                      video clip) -> 128 x 60 = 7680 samples
+                                    384 + 7680 = 8064, confirming the total.
+
+- "labels" array shape: (40, 4)
+    dimension 1 = 40          -> same 40 trials as above
+    dimension 2 = 4           -> 4 self-assessment questions DEAP asked after
+                                  each clip: valence, arousal, dominance,
+                                  liking. Each answered on a continuous
+                                  1-9 scale (DEAP's own rating-scale design,
+                                  modeled on the Self-Assessment Manikin).
+
+- Totals across the raw dataset: 32 subjects x 40 trials x 32 EEG channels
+  x 8064 samples (all four numbers individually explained above, simply
+  multiplied together to describe the full raw tensor), plus
+  32 x 40 x 4 continuous rating labels.
+
+- No labels are binary yet, no windows exist yet, no features exist yet —
+  this is the data exactly as DEAP distributes it.
+
+
+2. PREPROCESSING STEPS APPLIED (and the numbers each step introduces)
+------------------------------------------------------------------------
+
+Step 1 — Baseline correction
+    Uses the 384-sample / 3 s baseline segment described above: its
+    per-channel mean is computed and subtracted from the 7680-sample / 60 s
+    stimulus segment. No new numbers are introduced here; it consumes the
+    384 and 7680 sample counts already derived from the raw file.
+
+Step 2 — Windowing
+    WINDOW_SEC = 4 is a project design choice (chosen to match the
+    convention used across most of the DEAP emotion-recognition literature
+    reviewed for this project, so results are comparable to published
+    work rather than being an arbitrary choice).
+      -> 4 s x 128 Hz = 512 samples per window
+      -> 7680 stimulus samples / 512 samples per window = 15 windows per
+         trial (an exact division, since 7680 = 15 x 512 — DEAP's 60 s
+         stimulus length was effectively designed to divide evenly here)
+
+Step 3 — Two parallel feature representations
+
+  (a) Differential Entropy (DE) features — Track A (classical ML)
+      - 4 frequency bands, a standard EEG neuroscience convention (not
+        computed, adopted from the literature):
+          theta 4-8 Hz, alpha 8-13 Hz, beta 13-30 Hz, gamma 30-45 Hz
+      - DE is computed per (channel, band) pair using
+          DE = 0.5 x log(2 x pi x e x sigma^2)
+        where sigma^2 is that window's own signal variance — this is the
+        closed-form differential entropy of a Gaussian, a known formula,
+        not a project-specific number.
+      - Feature count per window = 32 channels x 4 bands = 128 features
+        (32 = the EEG channel count already explained; 4 = the band count
+        just above; multiplied because DE is computed independently for
+        every channel/band combination).
+
+      WHAT "DIFFERENTIAL ENTROPY" MEANS, AND WHY IT IS USED HERE:
+      Ordinary (Shannon) entropy measures the average "surprise" or
+      uncertainty of a discrete random variable — how unpredictable its
+      outcomes are. Differential entropy is the extension of that same
+      idea to a continuous random variable, such as the amplitude values
+      of an EEG signal within one time window. Instead of asking "which
+      exact outcome occurs," it asks "how spread out / unpredictable is
+      this continuous signal's amplitude distribution over this window,"
+      and it is computed from the signal's probability density function
+      rather than from a list of discrete symbols.
+      In this project, each 512-sample, single-band, single-channel
+      segment of EEG is treated as if it were drawn from a Gaussian
+      (normal) distribution — a standard simplifying assumption for
+      band-pass-filtered EEG, since filtering a broadband signal into a
+      narrow frequency band makes its amplitude distribution approximately
+      bell-shaped by the central limit theorem. For a Gaussian with
+      variance sigma^2, differential entropy has the closed form
+      DE = 0.5 x log(2 x pi x e x sigma^2); because log is monotonic, this
+      value increases exactly when sigma^2 (the signal's power in that
+      band) increases, so DE is mathematically just a log-transformed,
+      theoretically-grounded measure of how much energy that band carries
+      in that window, rather than an arbitrary or invented number.
+      Justification for using DE instead of plain band power/variance
+      here: (1) DE is the dominant hand-crafted feature in the EEG
+      emotion-recognition literature, and the original work introducing it
+      for this exact task (Duan et al., 2013, cited in the report) showed
+      it outperforms raw band energy empirically, so using it makes Track A
+      a test of the field's established default rather than a feature
+      invented for this project; (2) the log transform compresses the very
+      large dynamic range of raw EEG power (which can vary by orders of
+      magnitude across subjects/channels/bands) into a more balanced,
+      roughly-Gaussian-distributed scale, which is better behaved as input
+      to classical ML models such as Logistic Regression or SVM that are
+      sensitive to feature scale/skew; (3) it gives one single, comparable
+      number per (channel, band, window) that still carries a precise
+      information-theoretic meaning (uncertainty/energy of that band),
+      which is why 32 channels x 4 bands cleanly collapses to 128
+      meaningful features per window instead of needing a more complex
+      descriptor.
+
+  (b) Raw windows — Track B (deep learning)
+      - Each window kept as (32, 512): 32 = EEG channels (explained above),
+        512 = samples per window (derived in Step 2 above).
+      - Standardized per channel (zero mean, unit variance) — a
+        normalization choice, not a count.
+
+Step 4 — Label binarization
+    Threshold = 5.0, the midpoint of DEAP's 1-9 rating scale
+    ((1+9)/2 = 5), used as the dataset's own standard convention for
+    turning each continuous rating into "high" (rating > 5) vs. "low"
+    (rating <= 5). This produces one binary array per task, length equal
+    to however many trials/windows exist (see Step 5/Section 3 below).
+
+Step 5 — Subject-ID tracking
+    No new numeric values; simply records which of the 32 subjects
+    (explained above) each window came from, used later to group
+    cross-validation folds by subject.
+
+Step 6 — Caching
+    Saved to processed_cache/ as .npz files; introduces no numbers, purely
+    an implementation detail for speed on repeated runs.
+
+
+3. AFTER PREPROCESSING (final structure used for modeling)
+--------------------------------------------------------------
+
+Total window count:
+    32 subjects x 40 trials x 15 windows/trial = 19,200 windows
+    (32 and 40 are the raw dataset's own dimensions, explained in Section 1;
+     15 is the windows-per-trial figure derived in Step 2; the three are
+     multiplied because every subject contributes 40 trials and every trial
+     contributes 15 windows, with no overlap or exclusion applied)
+
+Track A output:
+    DE feature matrix: 19,200 windows x 128 features
+    (19,200 = total windows just derived; 128 = DE feature count per
+     window, derived in Step 3a as 32 channels x 4 bands)
+
+Track B output:
+    Raw window tensor: 19,200 windows x 32 channels x 512 samples
+    (19,200 = total windows; 32 = EEG channel count; 512 = samples per
+     window from Step 2 — the same three numbers reused, just kept in
+     their un-flattened per-channel/per-sample form instead of being
+     collapsed into 128 DE features)
+
+Shared across both tracks:
+    - 4 binary label arrays (one per task: valence, arousal, dominance,
+      liking — the same 4 rating types from the raw "labels" array,
+      now thresholded at 5.0), each of length 19,200 (one label per
+      window: every window inherits its parent trial's single trial-level
+      rating, since DEAP rates the whole clip, not each sub-window,
+      so all 15 windows from one trial share that trial's label)
+    - 1 subject-ID array, length 19,200, same reasoning: every window
+      inherits the subject it was cut from.
+
+Resulting class balance (these four pairs of percentages are empirical —
+measured by literally counting how many of the 19,200 windows fall into
+each binary class after the 5.0 threshold is applied; they are not derived
+from any formula, only from how DEAP's 32 participants actually rated the
+40 clips each):
+    - valence:   21.0% high / 79.0% low
+    - arousal:   23.3% high / 76.7% low
+    - dominance: 60.9% high / 39.1% low
+    - liking:    66.5% high / 33.5% low
+  (each pair sums to 100% by definition, since "high" and "low" are the
+  only two possible outcomes of the Step 4 threshold)
+
+
+4. SEED-IV (cross-corpus validation dataset — different numbers entirely)
+-------------------------------------------------------------------------
+
+Used only for the cross-corpus check (Section 12), not part of the main
+DEAP pipeline above. Every number here comes from SEED-IV's own dataset
+design, independent of DEAP:
+  - 62 EEG channels: SEED-IV's own electrode montage (almost double DEAP's
+    32, which is why the cross-corpus adapter restricts analysis to the
+    channels the two montages have in common).
+  - 15 subjects: number of participants SEED-IV recorded (fewer than
+    DEAP's 32).
+  - 200 Hz sampling rate: SEED-IV's own recording/distribution rate
+    (different from DEAP's 128 Hz, another reason a dedicated adapter is
+    needed before comparing the two datasets).
+  - 4 emotion classes (0=neutral, 1=sad, 2=fear, 3=happy): SEED-IV labels
+    each trial directly with one of 4 discrete emotions chosen by the film
+    clip shown, rather than DEAP's continuous 1-9 self-report scale.
+  - 24 film-clip trials per session, 3 sessions per subject: SEED-IV's
+    experimental design — each of the 15 subjects sat for 3 separate
+    recording sessions, each containing 24 clips, and (unlike DEAP) each
+    session uses its own independent trial-label ordering.
+  - Variable-duration trials (tens of thousands of samples): unlike DEAP's
+    fixed 60 s/trial, SEED-IV's film clips run for different lengths, so
+    there is no single fixed sample count analogous to DEAP's 8064.
+
+A dedicated adapter (scripts/cross_corpus/seed_adapter.py) reconciles these
+differences (e.g., restricting to the 32 channels shared with DEAP) before
+SEED-IV windows can be compared against DEAP-trained models.
