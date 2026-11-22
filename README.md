@@ -40,8 +40,6 @@ results/
   tables/                       -- CSV outputs from the notebook and scripts
   figures/                      -- PNG figures from the notebook and scripts
 papers_EEG/                     -- literature-review corpus (32 PDFs)
-citations.txt                   -- paper citation list
-literature_log.txt              -- per-paper attribution/summary log
 deap-dataset/, seed-dataset/    -- raw data (gitignored; download separately, see above)
 processed_cache/                -- cached feature builds (gitignored; regenerated automatically)
 ```
