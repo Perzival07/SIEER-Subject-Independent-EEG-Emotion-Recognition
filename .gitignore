@@ -1,22 +1,69 @@
-# Datasets (large files, multi-GB)
+# =====================================================================
+# Datasets & data artifacts (large, multi-GB, gated/licensed)
+# =====================================================================
 deap-dataset/
 seed-dataset/
-
-# Feature / window cache
 processed_cache/
-
-# Data artifacts
 *.dat
 *.npz
 *.npy
+*.mat
+*.pkl
+*.h5
+*.pt
+*.pth
+*.ckpt
 
-# Python and Jupyter
+# =====================================================================
+# Report / paper / publication material (kept local, not in the repo)
+# =====================================================================
+# Project report (LaTeX source + compiled PDF)
+Project_Report.tex
+Project_Report.pdf
+
+# Literature, citations and write-up notes
+papers_EEG/
+citations.txt
+literature_log.txt
+Project_Justification_Log.txt
+answer.txt
+
+# Discussion notes, screenshots and other scratch material
+changes/
+
+# Report-format (vector) figure exports; PNGs remain tracked
+results/figures/*.pdf
+
+# LaTeX build artifacts
+*.aux
+*.bbl
+*.bcf
+*.blg
+*.fdb_latexmk
+*.fls
+*.lof
+*.log
+*.lot
+*.out
+*.run.xml
+*.synctex.gz
+*.synctex(busy)
+*.toc
+*.nav
+*.snm
+*.vrb
+
+# =====================================================================
+# Python & Jupyter
+# =====================================================================
 __pycache__/
 *.py[cod]
 *$py.class
 .ipynb_checkpoints/
 
-# Virtual environments & IDE
+# =====================================================================
+# Virtual environments, IDE & OS
+# =====================================================================
 .env
 .venv/
 env/
@@ -25,3 +72,6 @@ venv/
 .idea/
 .claude/
 .claude.json
+.DS_Store
+Thumbs.db
+desktop.ini

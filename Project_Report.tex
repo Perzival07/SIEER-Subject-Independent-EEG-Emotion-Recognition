@@ -306,7 +306,7 @@ Chapter~\ref{ch:model-analysis}.
 
 \begin{figure}[H]
 \centering
-\includegraphics[width=0.8\textwidth]{class_balance.png}
+\includegraphics[width=\textwidth]{class_balance.png}
 \caption{High/low class balance per task. Valence and arousal are markedly
 skewed (21.0\%/79.0\% and 23.3\%/76.7\% high); dominance and liking are
 closer to balanced.}
@@ -612,8 +612,10 @@ Full (DE+Hjorth+FAA+Conn)     & 295 & 0.483 \\
 
 \begin{figure}[H]
 \centering
-\includegraphics[width=0.85\textwidth]{track_a_ablation_auc.png}
-\caption{Feature-set ablation: ROC-AUC by feature set, model, and task.}
+\includegraphics[width=\textwidth]{track_a_ablation_auc.png}
+\caption{Feature-set ablation: ROC-AUC by feature set, model, and task.
+Bars show the mean over 5 \texttt{GroupKFold} folds, error bars show
+$\pm$1 SD, and the dashed line marks chance (AUC $=0.5$).}
 \label{fig:ablation}
 \end{figure}
 
@@ -670,9 +672,11 @@ liking    & XGBoost      & 0.505 & 0.484 & $-0.021$ \\
 
 \begin{figure}[H]
 \centering
-\includegraphics[width=0.9\textwidth]{track_a_repeated_cv_auc_ci.png}
-\caption{Repeated GroupKFold (5$\times$5=25 folds): ROC-AUC with 95\%
-confidence intervals per model/task; 15/24 intervals contain chance (0.5).}
+\includegraphics[width=\textwidth]{track_a_repeated_cv_auc_ci.png}
+\caption{Repeated GroupKFold (5$\times$5=25 folds): mean ROC-AUC with 95\%
+confidence intervals per model and task. Hollow markers indicate intervals
+that contain chance (dashed line, AUC $=0.5$; 15 of 24), filled markers
+indicate intervals that exclude it.}
 \label{fig:repeated-cv}
 \end{figure}
 
