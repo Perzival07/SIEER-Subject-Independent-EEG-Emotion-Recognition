@@ -85,7 +85,7 @@ inter-model AUC deltas on the Full feature set are within one fold's standard
 deviation, so this is not expected to bias the conclusion toward or away from
 significance)."""))
 
-new_cells.append(code("""sig = pd.read_csv(TABLES_DIR / "track_a_significance_test.csv")
+new_cells.append(code("""sig = pd.read_csv(TABLES_DIR / "classical_ml_label_permutation_test_results.csv")
 display(sig.style.format({"observed_auc": "{:.4f}", "null_auc_mean": "{:.4f}",
                            "null_auc_std": "{:.4f}", "z_score": "{:+.2f}", "p_value": "{:.4f}"}))
 
@@ -100,7 +100,7 @@ ax.set_xticks(range(len(sig))); ax.set_xticklabels(sig.task)
 ax.set_ylabel("ROC AUC"); ax.legend()
 ax.set_title("Observed AUC vs. label-permutation null distribution (Full features, LogisticRegression)")
 plt.tight_layout()
-fig.savefig(FIGURES_DIR / "track_a_significance_test.png", dpi=150, bbox_inches="tight")
+fig.savefig(FIGURES_DIR / "classical_ml_label_permutation_test_observed_vs_null_roc_auc.png", dpi=150, bbox_inches="tight")
 plt.show()
 
 print("Per-task verdict (alpha=0.05):")
@@ -146,7 +146,7 @@ linear alignment step (Sun & Saenko, 2016), directly motivated by DS-AGC's
 LOSO-on-SEED finding that plain CORAL reaches ~65-70% where untransformed
 features stay under 60%."""))
 
-new_cells.append(code("""align = pd.read_csv(TABLES_DIR / "track_a_domain_alignment.csv")
+new_cells.append(code("""align = pd.read_csv(TABLES_DIR / "classical_ml_coral_domain_alignment_results.csv")
 display(align.pivot_table(index=["task", "model"], columns="condition", values="roc_auc_mean")
         .assign(delta_auc=lambda d: d["coral"] - d["none"])
         .style.format("{:.4f}"))
@@ -159,7 +159,7 @@ for ax, task in zip(axes, TASK_ORDER):
     ax.set_title(task); ax.set_xlabel(""); ax.tick_params(axis="x", rotation=20)
     ax.set_ylabel("ROC AUC" if task == TASK_ORDER[0] else "")
 plt.tight_layout()
-fig.savefig(FIGURES_DIR / "track_a_domain_alignment_auc.png", dpi=150, bbox_inches="tight")
+fig.savefig(FIGURES_DIR / "classical_ml_coral_domain_alignment_roc_auc.png", dpi=150, bbox_inches="tight")
 plt.show()
 
 delta = (align.pivot_table(index=["task", "model"], columns="condition", values="roc_auc_mean")
@@ -198,7 +198,7 @@ trained on the identical single 70/15/15 subject-independent split per task
 (seed=42) for a fair paired comparison, not reused from section 6's numbers
 (which may not share the same split)."""))
 
-new_cells.append(code("""dann = pd.read_csv(TABLES_DIR / "track_b_domain_adversarial.csv")
+new_cells.append(code("""dann = pd.read_csv(TABLES_DIR / "deep_learning_domain_adversarial_dann_results.csv")
 display(dann.pivot(index="task", columns="condition", values=["accuracy", "f1_macro", "roc_auc"])
         .style.format("{:.4f}"))
 
@@ -209,7 +209,7 @@ ax.axhline(0.5, color="black", linestyle="--", linewidth=1)
 ax.set_ylabel("ROC AUC"); ax.set_title("EEGNet baseline vs. + subject-adversarial (DANN) training")
 plt.xticks(rotation=0)
 plt.tight_layout()
-fig.savefig(FIGURES_DIR / "track_b_domain_adversarial_auc.png", dpi=150, bbox_inches="tight")
+fig.savefig(FIGURES_DIR / "deep_learning_domain_adversarial_dann_roc_auc.png", dpi=150, bbox_inches="tight")
 plt.show()
 
 delta = piv["dann"] - piv["baseline"]

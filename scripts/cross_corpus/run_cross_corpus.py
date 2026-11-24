@@ -130,10 +130,10 @@ def main():
          "f1_macro": zero_shot_overall["f1_macro"], "roc_auc": zero_shot_overall["roc_auc"]},
         {"setting": "SEEDIV_only_LOSO", **seed_loso_df.mean(numeric_only=True).to_dict()},
     ])
-    summary.to_csv(RESULTS_DIR / "cross_corpus_deap_to_seediv_summary.csv", index=False)
-    zero_shot_per_subject.to_csv(RESULTS_DIR / "cross_corpus_deap_to_seediv_per_subject.csv", index=False)
-    seed_loso_df.to_csv(RESULTS_DIR / "cross_corpus_seediv_loso.csv", index=False)
-    print(f"\nSaved summary to {RESULTS_DIR / 'cross_corpus_deap_to_seediv_summary.csv'}")
+    summary.to_csv(RESULTS_DIR / "cross_corpus_deap_to_seediv_summary_three_settings.csv", index=False)
+    zero_shot_per_subject.to_csv(RESULTS_DIR / "cross_corpus_deap_to_seediv_zero_shot_per_subject.csv", index=False)
+    seed_loso_df.to_csv(RESULTS_DIR / "cross_corpus_seediv_only_loso_per_subject.csv", index=False)
+    print(f"\nSaved summary to {RESULTS_DIR / 'cross_corpus_deap_to_seediv_summary_three_settings.csv'}")
     print(f"Done in {(time.time()-t0)/60:.1f} min")
 
 

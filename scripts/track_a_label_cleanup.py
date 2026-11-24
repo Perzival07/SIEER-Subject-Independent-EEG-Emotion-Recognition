@@ -140,7 +140,7 @@ def run():
 if __name__ == "__main__":
     t0 = time.time()
     results = run()
-    results.to_csv(TABLES_DIR / "track_a_label_cleanup_results.csv", index=False)
+    results.to_csv(TABLES_DIR / "classical_ml_label_binarization_strategies_results.csv", index=False)
     print(f"\nDone in {time.time()-t0:.1f}s")
 
     best = results.loc[results.groupby("task").roc_auc_mean.idxmax()]

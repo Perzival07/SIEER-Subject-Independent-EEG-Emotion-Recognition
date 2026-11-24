@@ -60,14 +60,14 @@ and is ready to run the moment you supply the actual files.
    yourself (`scipy.io.loadmat(path).keys()`) and check.
 
 ## What it produces
-`results/tables/cross_corpus_deap_to_seediv_summary.csv` with three rows:
+`results/tables/cross_corpus_deap_to_seediv_summary_three_settings.csv` with three rows:
 | setting | accuracy | f1_macro | roc_auc |
 |---|---|---|---|
 | within_DEAP_groupkfold | DEAP-only subject-independent baseline |
 | DEAP_to_SEEDIV_zero_shot | train on all of DEAP, never see SEED-IV, test on SEED-IV |
 | SEEDIV_only_LOSO | upper bound: same-corpus, subject-independent |
 
-Plus a per-subject breakdown (`cross_corpus_deap_to_seediv_per_subject.csv`) so
+Plus a per-subject breakdown (`cross_corpus_deap_to_seediv_zero_shot_per_subject.csv`) so
 you can see whether zero-shot failure is uniform or concentrated in a few
 SEED-IV subjects (useful for the discussion section either way).
 

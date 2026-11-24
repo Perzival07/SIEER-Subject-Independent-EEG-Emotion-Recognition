@@ -21,7 +21,7 @@ machine's RTX 3070 Ti in a few minutes, not the ~87 min of track_b_repeated.py):
   - Single subject-independent 70/15/15 GroupShuffleSplit per task (seed=42),
     not repeated -- matches the notebook's original section-6 protocol so the
     "baseline" arm here is a fair, freshly-computed control run with the exact
-    same split as the "dann" arm (not reused from track_b_dl_results.csv,
+    same split as the "dann" arm (not reused from deep_learning_raw_eeg_results.csv,
     which may have used a different split/seed).
   - Domain labels = training-fold subject IDs only (unseen validation/test
     subjects are never given domain labels or gradients -- the discriminator
@@ -302,9 +302,9 @@ if __name__ == "__main__":
     for task in TASK_ORDER:
         rows.extend(run_task(task, X_raw, groups, y_by_task[task]))
     results = pd.DataFrame(rows)
-    results.to_csv(TABLES_DIR / "track_b_domain_adversarial.csv", index=False)
+    results.to_csv(TABLES_DIR / "deep_learning_domain_adversarial_dann_results.csv", index=False)
     print(f"\nDone in {(time.time()-t0)/60:.1f} min. "
-          f"Saved to {TABLES_DIR / 'track_b_domain_adversarial.csv'}")
+          f"Saved to {TABLES_DIR / 'deep_learning_domain_adversarial_dann_results.csv'}")
 
     piv = results.pivot(index="task", columns="condition", values="roc_auc")
     piv["delta_auc"] = piv["dann"] - piv["baseline"]

@@ -13,7 +13,7 @@ near-chance performance also accompanied by an implausible/noisy attribution
 pattern (which would suggest the small amount of "signal" some folds show is
 itself an artifact rather than anything neurophysiological)?
 
-Method: for each task, fit XGBoost (the model track_a_ablation_results.csv
+Method: for each task, fit XGBoost (the model classical_ml_feature_set_ablation_results.csv
 shows as the strongest or tied-strongest Track A performer) on the Full
 feature set (DE+Hjorth+FAA+Connectivity, same 295-dim set as
 track_a_ablation.py) using ONE representative GroupKFold(5) train/test split
@@ -99,7 +99,7 @@ def run_task(task):
     axes[1].barh(top15["feature"][::-1], top15["mean_abs_shap"][::-1], color="C1")
     axes[1].set_xlabel("mean |SHAP|"); axes[1].set_title(f"{task}: top 15 individual features")
     plt.tight_layout()
-    fig.savefig(FIGURES_DIR / f"track_a_shap_summary_{task}.png", dpi=150, bbox_inches="tight")
+    fig.savefig(FIGURES_DIR / f"classical_ml_shap_feature_importance_{task}.png", dpi=150, bbox_inches="tight")
     plt.close(fig)
 
     rows = []
@@ -117,6 +117,6 @@ if __name__ == "__main__":
     for task in TASK_ORDER:
         all_rows.extend(run_task(task))
     out = pd.DataFrame(all_rows)
-    out.to_csv(TABLES_DIR / "track_a_shap_diagnostic.csv", index=False)
-    print(f"\nSaved to {TABLES_DIR / 'track_a_shap_diagnostic.csv'}")
+    out.to_csv(TABLES_DIR / "classical_ml_shap_top_features_per_emotion_dimension.csv", index=False)
+    print(f"\nSaved to {TABLES_DIR / 'classical_ml_shap_top_features_per_emotion_dimension.csv'}")
     print(f"Figures saved to {FIGURES_DIR}/track_a_shap_summary_<task>.png")

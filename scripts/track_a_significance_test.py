@@ -165,9 +165,9 @@ if __name__ == "__main__":
     t0 = time.time()
     rows = [run_task(task) for task in TASK_ORDER]
     results = pd.DataFrame(rows)
-    results.to_csv(TABLES_DIR / "track_a_significance_test.csv", index=False)
+    results.to_csv(TABLES_DIR / "classical_ml_label_permutation_test_results.csv", index=False)
     print(f"\nDone in {(time.time()-t0)/60:.1f} min. "
-          f"Saved to {TABLES_DIR / 'track_a_significance_test.csv'}")
+          f"Saved to {TABLES_DIR / 'classical_ml_label_permutation_test_results.csv'}")
     print("\nSummary (alpha=0.05):")
     for _, r in results.iterrows():
         verdict = "SIGNIFICANT (but check effect size!)" if r.p_value < 0.05 else "not significant"

@@ -56,9 +56,9 @@ def main():
 
     fig.tight_layout(h_pad=2.0)
     FIGURES_DIR.mkdir(parents=True, exist_ok=True)
-    fig.savefig(FIGURES_DIR / "class_balance.png", dpi=300, bbox_inches="tight")
-    fig.savefig(FIGURES_DIR / "class_balance.pdf", bbox_inches="tight")
-    print("Saved", FIGURES_DIR / "class_balance.png")
+    fig.savefig(FIGURES_DIR / "class_distribution_low_vs_high_per_emotion_dimension.png", dpi=300, bbox_inches="tight")
+    fig.savefig(FIGURES_DIR / "class_distribution_low_vs_high_per_emotion_dimension.pdf", bbox_inches="tight")
+    print("Saved", FIGURES_DIR / "class_distribution_low_vs_high_per_emotion_dimension.png")
 
 
 if __name__ == "__main__":

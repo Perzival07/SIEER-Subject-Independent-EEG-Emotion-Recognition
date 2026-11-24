@@ -1,6 +1,6 @@
 """Publication-quality redraw of the repeated GroupKFold CI figure (Figure 2).
 
-Reads results/tables/track_a_repeated_groupkfold.csv and writes
+Reads results/tables/classical_ml_repeated_groupkfold_results_with_95ci.csv and writes
 results/figures/track_a_repeated_cv_auc_ci.{png,pdf}.
 """
 from pathlib import Path
@@ -40,7 +40,7 @@ plt.rcParams.update({
 
 
 def main():
-    df = pd.read_csv(TABLES_DIR / "track_a_repeated_groupkfold.csv")
+    df = pd.read_csv(TABLES_DIR / "classical_ml_repeated_groupkfold_results_with_95ci.csv")
     fig, axes = plt.subplots(2, 2, figsize=(10, 6.4), sharex=True, sharey=True)
     y = np.arange(len(MODELS))[::-1]
 
@@ -86,9 +86,9 @@ def main():
     fig.tight_layout(rect=(0, 0, 1, 0.95))
 
     FIGURES_DIR.mkdir(parents=True, exist_ok=True)
-    fig.savefig(FIGURES_DIR / "track_a_repeated_cv_auc_ci.png", dpi=300, bbox_inches="tight")
-    fig.savefig(FIGURES_DIR / "track_a_repeated_cv_auc_ci.pdf", bbox_inches="tight")
-    print("Saved", FIGURES_DIR / "track_a_repeated_cv_auc_ci.png")
+    fig.savefig(FIGURES_DIR / "classical_ml_repeated_groupkfold_roc_auc_95ci.png", dpi=300, bbox_inches="tight")
+    fig.savefig(FIGURES_DIR / "classical_ml_repeated_groupkfold_roc_auc_95ci.pdf", bbox_inches="tight")
+    print("Saved", FIGURES_DIR / "classical_ml_repeated_groupkfold_roc_auc_95ci.png")
 
 
 if __name__ == "__main__":

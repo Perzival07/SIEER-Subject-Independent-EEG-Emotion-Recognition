@@ -1,6 +1,6 @@
 """Publication-quality redraw of the feature-set ablation figure (Figure 3).
 
-Reads results/tables/track_a_ablation_results.csv and writes
+Reads results/tables/classical_ml_feature_set_ablation_results.csv and writes
 results/figures/track_a_ablation_auc.{png,pdf}.
 """
 from pathlib import Path
@@ -43,7 +43,7 @@ plt.rcParams.update({
 
 
 def main():
-    df = pd.read_csv(TABLES_DIR / "track_a_ablation_results.csv")
+    df = pd.read_csv(TABLES_DIR / "classical_ml_feature_set_ablation_results.csv")
     fig, axes = plt.subplots(2, 2, figsize=(10, 6.6), sharey=True)
     x = np.arange(len(FEATURE_SETS))
     width = 0.26
@@ -76,9 +76,9 @@ def main():
     fig.tight_layout(rect=(0, 0, 1, 0.95))
 
     FIGURES_DIR.mkdir(parents=True, exist_ok=True)
-    fig.savefig(FIGURES_DIR / "track_a_ablation_auc.png", dpi=300, bbox_inches="tight")
-    fig.savefig(FIGURES_DIR / "track_a_ablation_auc.pdf", bbox_inches="tight")
-    print("Saved", FIGURES_DIR / "track_a_ablation_auc.png")
+    fig.savefig(FIGURES_DIR / "classical_ml_feature_set_ablation_roc_auc.png", dpi=300, bbox_inches="tight")
+    fig.savefig(FIGURES_DIR / "classical_ml_feature_set_ablation_roc_auc.pdf", bbox_inches="tight")
+    print("Saved", FIGURES_DIR / "classical_ml_feature_set_ablation_roc_auc.png")
 
 
 if __name__ == "__main__":

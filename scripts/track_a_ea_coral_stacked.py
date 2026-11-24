@@ -188,9 +188,9 @@ def run():
 if __name__ == "__main__":
     t0 = time.time()
     results = run()
-    results.to_csv(TABLES_DIR / "track_a_ea_coral_stacked.csv", index=False)
+    results.to_csv(TABLES_DIR / "classical_ml_euclidean_alignment_plus_coral_results.csv", index=False)
     print(f"\nDone in {(time.time()-t0)/60:.1f} min. "
-          f"Saved to {TABLES_DIR / 'track_a_ea_coral_stacked.csv'}")
+          f"Saved to {TABLES_DIR / 'classical_ml_euclidean_alignment_plus_coral_results.csv'}")
 
     piv = results.pivot_table(index=["task", "model"], columns="condition", values="roc_auc_mean")
     piv["stack_vs_ea"] = piv["ea_coral"] - piv["ea"]

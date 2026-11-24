@@ -140,9 +140,9 @@ def run():
 if __name__ == "__main__":
     t0 = time.time()
     results = run()
-    results.to_csv(TABLES_DIR / "track_a_domain_alignment.csv", index=False)
+    results.to_csv(TABLES_DIR / "classical_ml_coral_domain_alignment_results.csv", index=False)
     print(f"\nDone in {(time.time()-t0)/60:.1f} min. "
-          f"Saved to {TABLES_DIR / 'track_a_domain_alignment.csv'}")
+          f"Saved to {TABLES_DIR / 'classical_ml_coral_domain_alignment_results.csv'}")
 
     piv = results.pivot_table(index=["task", "model"], columns="condition", values="roc_auc_mean")
     piv["delta_auc"] = piv["coral"] - piv["none"]

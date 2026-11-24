@@ -207,9 +207,9 @@ if __name__ == "__main__":
     for task in TASK_ORDER:
         rows.extend(run_task(task, X_raw, groups, y_by_task[task]))
     results = pd.DataFrame(rows)
-    results.to_csv(TABLES_DIR / "track_b_auc_maximization.csv", index=False)
+    results.to_csv(TABLES_DIR / "deep_learning_auc_maximization_loss_results.csv", index=False)
     print(f"\nDone in {(time.time()-t0)/60:.1f} min. "
-          f"Saved to {TABLES_DIR / 'track_b_auc_maximization.csv'}")
+          f"Saved to {TABLES_DIR / 'deep_learning_auc_maximization_loss_results.csv'}")
 
     piv = results.pivot(index="task", columns="condition", values="roc_auc")
     piv["delta_auc"] = piv["auc_max"] - piv["ce_baseline"]

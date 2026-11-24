@@ -146,9 +146,9 @@ if __name__ == "__main__":
     t0 = time.time()
     all_rows = [run_task(task) for task in TASK_ORDER]
     results = pd.concat(all_rows, ignore_index=True)
-    results.to_csv(TABLES_DIR / "track_a_calibration_loso.csv", index=False)
+    results.to_csv(TABLES_DIR / "classical_ml_zero_shot_vs_calibrated_loso_per_subject.csv", index=False)
     print(f"\nDone in {(time.time()-t0)/60:.1f} min. Saved to "
-          f"{TABLES_DIR / 'track_a_calibration_loso.csv'}")
+          f"{TABLES_DIR / 'classical_ml_zero_shot_vs_calibrated_loso_per_subject.csv'}")
 
     summary = results.groupby("task").agg(
         zeroshot_auc_mean=("zeroshot_auc", "mean"),

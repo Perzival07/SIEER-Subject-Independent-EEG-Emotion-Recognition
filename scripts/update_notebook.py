@@ -90,7 +90,7 @@ Ablation (`scripts/track_a_ablation.py`, single `GroupKFold(5)` pass, subject-gr
 3 representative models x 6 feature-set combinations x 4 tasks = 360 fits, ~37 min)
 compares DE-only against each addition and the full combined set."""))
 
-new_cells.append(code("""ablation = pd.read_csv(TABLES_DIR / "track_a_ablation_results.csv")
+new_cells.append(code("""ablation = pd.read_csv(TABLES_DIR / "classical_ml_feature_set_ablation_results.csv")
 display(ablation.sort_values(["task", "roc_auc_mean"], ascending=[True, False])
         .style.format({"accuracy_mean": "{:.3f}", "f1_mean": "{:.3f}", "roc_auc_mean": "{:.3f}"}))
 
@@ -104,7 +104,7 @@ for ax, task in zip(axes, TASK_ORDER):
     ax.set_ylabel("ROC AUC" if task == TASK_ORDER[0] else "")
     ax.legend(fontsize=7)
 plt.tight_layout()
-fig.savefig(FIGURES_DIR / "track_a_ablation_auc.png", dpi=150, bbox_inches="tight")
+fig.savefig(FIGURES_DIR / "classical_ml_feature_set_ablation_roc_auc.png", dpi=150, bbox_inches="tight")
 plt.show()
 
 best_auc = ablation.loc[ablation.groupby("task").roc_auc_mean.idxmax()]
@@ -154,7 +154,7 @@ Run via `scripts/track_a_repeated_nested_cv.py` on the Full feature set from sec
 (6 models x 4 tasks x 25 folds for the repeated pass, plus the nested search — well over
 an hour total, so this is run as a companion script rather than inline)."""))
 
-new_cells.append(code("""repeated_cv = pd.read_csv(TABLES_DIR / "track_a_repeated_groupkfold.csv")
+new_cells.append(code("""repeated_cv = pd.read_csv(TABLES_DIR / "classical_ml_repeated_groupkfold_results_with_95ci.csv")
 display(repeated_cv.sort_values(["task", "roc_auc_mean"], ascending=[True, False])
         .style.format({c: "{:.3f}" for c in repeated_cv.columns if "mean" in c or "ci95" in c or "std" in c}))
 
@@ -166,7 +166,7 @@ for ax, task in zip(axes, TASK_ORDER):
     ax.axvline(0.5, color="black", linestyle="--", linewidth=1)
     ax.set_title(task); ax.set_xlabel("ROC AUC (95% CI, 25 folds)")
 plt.tight_layout()
-fig.savefig(FIGURES_DIR / "track_a_repeated_cv_auc_ci.png", dpi=150, bbox_inches="tight")
+fig.savefig(FIGURES_DIR / "classical_ml_repeated_groupkfold_roc_auc_95ci.png", dpi=150, bbox_inches="tight")
 plt.show()
 
 n_total = len(repeated_cv)
@@ -176,7 +176,7 @@ print(f"{n_chance}/{n_total} model x task combinations have a 95% CI on ROC AUC 
       f"coin flip at the subject level, even with 25 repeated folds.")
 """))
 
-new_cells.append(code("""nested_cv = pd.read_csv(TABLES_DIR / "track_a_nested_cv.csv")
+new_cells.append(code("""nested_cv = pd.read_csv(TABLES_DIR / "classical_ml_nested_cv_tuned_results.csv")
 display(nested_cv.style.format({c: "{:.3f}" for c in nested_cv.columns if "mean" in c or "std" in c}))
 
 compare_rows = []
@@ -226,7 +226,7 @@ repeated subject-independent 70/15/15 splits (different seeds) for both window v
 all 4 architectures, all 4 tasks = 2 x 4 x 4 x 5 = 160 training runs
 (`scripts/track_b_repeated.py`, ~87 min on this machine's RTX 3070 Ti)."""))
 
-new_cells.append(code("""overlap_cmp = pd.read_csv(TABLES_DIR / "track_b_repeated_overlap_comparison.csv")
+new_cells.append(code("""overlap_cmp = pd.read_csv(TABLES_DIR / "deep_learning_overlapping_vs_nonoverlapping_windows_results.csv")
 display(overlap_cmp.sort_values(["task", "model", "dataset"])
         .style.format({c: "{:.3f}" for c in overlap_cmp.columns if "mean" in c or "std" in c}))
 
@@ -245,7 +245,7 @@ for ax, task in zip(axes, TASK_ORDER):
     ax.set_title(task); ax.set_xlabel(""); ax.tick_params(axis="x", rotation=30)
     ax.set_ylabel("ROC AUC (mean +/- std, 5 seeds)" if task == TASK_ORDER[0] else "")
 plt.tight_layout()
-fig.savefig(FIGURES_DIR / "track_b_overlap_vs_nonoverlap_auc.png", dpi=150, bbox_inches="tight")
+fig.savefig(FIGURES_DIR / "deep_learning_overlapping_vs_nonoverlapping_windows_roc_auc.png", dpi=150, bbox_inches="tight")
 plt.show()
 
 pivot = overlap_cmp.pivot_table(index=["task", "model"], columns="dataset",

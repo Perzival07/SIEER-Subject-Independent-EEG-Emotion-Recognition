@@ -53,7 +53,7 @@ Run via `scripts/track_a_label_cleanup.py` (GroupKFold(5), 3 variants x 3
 models x 4 tasks) -- feature/rating row alignment with the section-9 cache is
 verified before use (`scripts/build_raw_ratings.py`)."""))
 
-new_cells.append(code("""label_cleanup = pd.read_csv(TABLES_DIR / "track_a_label_cleanup_results.csv")
+new_cells.append(code("""label_cleanup = pd.read_csv(TABLES_DIR / "classical_ml_label_binarization_strategies_results.csv")
 display(label_cleanup.sort_values(["task", "roc_auc_mean"], ascending=[True, False])
         .style.format({"class_balance_high_frac": "{:.2f}", "accuracy_mean": "{:.3f}",
                         "f1_mean": "{:.3f}", "roc_auc_mean": "{:.3f}"}))
@@ -66,7 +66,7 @@ for ax, task in zip(axes, TASK_ORDER):
     ax.set_title(task); ax.set_xlabel(""); ax.tick_params(axis="x", rotation=20)
     ax.set_ylabel("ROC AUC" if task == TASK_ORDER[0] else "")
 plt.tight_layout()
-fig.savefig(FIGURES_DIR / "track_a_label_cleanup_auc.png", dpi=150, bbox_inches="tight")
+fig.savefig(FIGURES_DIR / "classical_ml_label_binarization_strategies_roc_auc.png", dpi=150, bbox_inches="tight")
 plt.show()
 
 best_per_task = label_cleanup.loc[label_cleanup.groupby("task").roc_auc_mean.idxmax()]
@@ -114,7 +114,7 @@ calibration set happens to be single-class (given the label imbalance already
 documented) are skipped for the calibrated arm and reported as such, not
 silently dropped."""))
 
-new_cells.append(code("""calib = pd.read_csv(TABLES_DIR / "track_a_calibration_loso.csv")
+new_cells.append(code("""calib = pd.read_csv(TABLES_DIR / "classical_ml_zero_shot_vs_calibrated_loso_per_subject.csv")
 
 summary_rows = []
 for task in TASK_ORDER:
@@ -150,7 +150,7 @@ for ax, task in zip(axes, TASK_ORDER):
     if task == TASK_ORDER[0]:
         ax.legend(fontsize=8)
 plt.tight_layout()
-fig.savefig(FIGURES_DIR / "track_a_calibration_per_subject.png", dpi=150, bbox_inches="tight")
+fig.savefig(FIGURES_DIR / "classical_ml_zero_shot_vs_calibrated_roc_auc_per_subject.png", dpi=150, bbox_inches="tight")
 plt.show()
 """))
 

@@ -110,8 +110,8 @@ def run_ablation():
 if __name__ == "__main__":
     t0 = time.time()
     results = run_ablation()
-    results.to_csv(TABLES_DIR / "track_a_ablation_results.csv", index=False)
-    print(f"\nDone in {time.time()-t0:.1f}s. Saved to {TABLES_DIR / 'track_a_ablation_results.csv'}")
+    results.to_csv(TABLES_DIR / "classical_ml_feature_set_ablation_results.csv", index=False)
+    print(f"\nDone in {time.time()-t0:.1f}s. Saved to {TABLES_DIR / 'classical_ml_feature_set_ablation_results.csv'}")
 
     best_per_task = (results.sort_values("accuracy_mean", ascending=False)
                       .groupby("task").first()[["feature_set", "model", "accuracy_mean", "f1_mean", "roc_auc_mean"]])

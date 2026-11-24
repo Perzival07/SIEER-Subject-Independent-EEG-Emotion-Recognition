@@ -211,10 +211,10 @@ if __name__ == "__main__":
     t0 = time.time()
     print("=" * 20, "REPEATED GROUPKFOLD (fixed hyperparameters)", "=" * 20)
     repeated_results = run_repeated_cv()
-    repeated_results.to_csv(TABLES_DIR / "track_a_repeated_groupkfold.csv", index=False)
+    repeated_results.to_csv(TABLES_DIR / "classical_ml_repeated_groupkfold_results_with_95ci.csv", index=False)
 
     print("\n" + "=" * 20, "NESTED CV (hyperparameter tuning)", "=" * 20)
     nested_results = run_nested_cv()
-    nested_results.to_csv(TABLES_DIR / "track_a_nested_cv.csv", index=False)
+    nested_results.to_csv(TABLES_DIR / "classical_ml_nested_cv_tuned_results.csv", index=False)
 
     print(f"\nTotal time: {(time.time()-t0)/60:.1f} min")

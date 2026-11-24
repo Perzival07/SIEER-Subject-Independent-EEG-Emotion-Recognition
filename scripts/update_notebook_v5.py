@@ -41,7 +41,7 @@ DE-only feature set as 17.1 (GroupKFold(5), 3 models, 4 tasks): `none`,
 `coral` alone, `ea` alone, and `ea_coral` (EA first, then CORAL on the
 resulting per-fold split)."""))
 
-new_cells.append(code("""stack = pd.read_csv(TABLES_DIR / "track_a_ea_coral_stacked.csv")
+new_cells.append(code("""stack = pd.read_csv(TABLES_DIR / "classical_ml_euclidean_alignment_plus_coral_results.csv")
 piv = stack.pivot_table(index=["task", "model"], columns="condition", values="roc_auc_mean")
 piv = piv[["none", "coral", "ea", "ea_coral"]]
 piv["stack_vs_ea"] = piv["ea_coral"] - piv["ea"]
@@ -56,7 +56,7 @@ for ax, task in zip(axes, TASK_ORDER):
     ax.set_title(task); ax.set_xlabel(""); ax.tick_params(axis="x", rotation=20)
     ax.set_ylabel("ROC AUC" if task == TASK_ORDER[0] else "")
 plt.tight_layout()
-fig.savefig(FIGURES_DIR / "track_a_ea_coral_stacked_auc.png", dpi=150, bbox_inches="tight")
+fig.savefig(FIGURES_DIR / "classical_ml_euclidean_alignment_plus_coral_roc_auc.png", dpi=150, bbox_inches="tight")
 plt.show()
 
 print("Mean AUC by condition (averaged across all 12 task/model combos):")

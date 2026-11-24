@@ -77,7 +77,7 @@ that subject has), and Differential-Entropy band-power features are then
 recomputed from the whitened signal. Compared against unaligned DE features,
 same GroupKFold(5) / 3-model setup as section 9/16.2."""))
 
-new_cells.append(code("""ea = pd.read_csv(TABLES_DIR / "track_a_riemannian_alignment.csv")
+new_cells.append(code("""ea = pd.read_csv(TABLES_DIR / "classical_ml_euclidean_alignment_results.csv")
 display(ea.pivot_table(index=["task", "model"], columns="condition", values="roc_auc_mean")
         .assign(delta_auc=lambda d: d["ea"] - d["none"])
         .style.format("{:.4f}"))
@@ -90,7 +90,7 @@ for ax, task in zip(axes, TASK_ORDER):
     ax.set_title(task); ax.set_xlabel(""); ax.tick_params(axis="x", rotation=20)
     ax.set_ylabel("ROC AUC" if task == TASK_ORDER[0] else "")
 plt.tight_layout()
-fig.savefig(FIGURES_DIR / "track_a_riemannian_alignment_auc.png", dpi=150, bbox_inches="tight")
+fig.savefig(FIGURES_DIR / "classical_ml_euclidean_alignment_roc_auc.png", dpi=150, bbox_inches="tight")
 plt.show()
 
 delta = (ea.pivot_table(index=["task", "model"], columns="condition", values="roc_auc_mean")
@@ -132,7 +132,7 @@ initialized) EEGNet. Motivated by 2403.04041, the only paper in the whole
 literature review evaluated LOSO on DEAP itself while beating DA
 baselines."""))
 
-new_cells.append(code("""ssl = pd.read_csv(TABLES_DIR / "track_b_ssl_pretrain.csv")
+new_cells.append(code("""ssl = pd.read_csv(TABLES_DIR / "deep_learning_self_supervised_pretraining_results.csv")
 display(ssl.pivot(index="task", columns="condition", values=["accuracy", "f1_macro", "roc_auc"])
         .style.format("{:.4f}"))
 
@@ -143,7 +143,7 @@ ax.axhline(0.5, color="black", linestyle="--", linewidth=1)
 ax.set_ylabel("ROC AUC"); ax.set_title("EEGNet: scratch vs. SSL-pretrained trunk")
 plt.xticks(rotation=0)
 plt.tight_layout()
-fig.savefig(FIGURES_DIR / "track_b_ssl_pretrain_auc.png", dpi=150, bbox_inches="tight")
+fig.savefig(FIGURES_DIR / "deep_learning_self_supervised_pretraining_roc_auc.png", dpi=150, bbox_inches="tight")
 plt.show()
 
 delta = piv["ssl_pretrained"] - piv["scratch"]
@@ -175,7 +175,7 @@ self-contained version of the Ying et al.-style AUC-margin idea 2408.08979
 builds its full saddle-point solver around), everything else (model, split,
 seed) held identical to the cross-entropy baseline."""))
 
-new_cells.append(code("""aucmax = pd.read_csv(TABLES_DIR / "track_b_auc_maximization.csv")
+new_cells.append(code("""aucmax = pd.read_csv(TABLES_DIR / "deep_learning_auc_maximization_loss_results.csv")
 display(aucmax.pivot(index="task", columns="condition", values=["accuracy", "f1_macro", "roc_auc"])
         .style.format("{:.4f}"))
 
@@ -186,7 +186,7 @@ ax.axhline(0.5, color="black", linestyle="--", linewidth=1)
 ax.set_ylabel("ROC AUC"); ax.set_title("EEGNet: cross-entropy vs. AUC-margin loss")
 plt.xticks(rotation=0)
 plt.tight_layout()
-fig.savefig(FIGURES_DIR / "track_b_auc_maximization_auc.png", dpi=150, bbox_inches="tight")
+fig.savefig(FIGURES_DIR / "deep_learning_auc_maximization_loss_roc_auc.png", dpi=150, bbox_inches="tight")
 plt.show()
 
 delta = piv["auc_max"] - piv["ce_baseline"]
@@ -220,7 +220,7 @@ subject with the adapted statistics -- the cheapest member of the source-free
 UDA family 2504.03707 surveys, compared against the same trained baseline
 evaluated with its original (training-population) BatchNorm statistics."""))
 
-new_cells.append(code("""adabn = pd.read_csv(TABLES_DIR / "track_b_test_time_adaptation.csv")
+new_cells.append(code("""adabn = pd.read_csv(TABLES_DIR / "deep_learning_test_time_adaptation_adabn_results.csv")
 display(adabn.pivot(index="task", columns="condition", values=["accuracy", "f1_macro", "roc_auc"])
         .style.format("{:.4f}"))
 
@@ -231,7 +231,7 @@ ax.axhline(0.5, color="black", linestyle="--", linewidth=1)
 ax.set_ylabel("ROC AUC"); ax.set_title("EEGNet: no adaptation vs. AdaBN test-time adaptation")
 plt.xticks(rotation=0)
 plt.tight_layout()
-fig.savefig(FIGURES_DIR / "track_b_test_time_adaptation_auc.png", dpi=150, bbox_inches="tight")
+fig.savefig(FIGURES_DIR / "deep_learning_test_time_adaptation_adabn_roc_auc.png", dpi=150, bbox_inches="tight")
 plt.show()
 
 delta = piv["adabn"] - piv["no_adaptation"]
@@ -262,7 +262,7 @@ whether the (weak) signal these near-chance models find looks
 neurophysiologically plausible or noise-like, motivated by
 sensors-25-01827."""))
 
-new_cells.append(code("""shap_df = pd.read_csv(TABLES_DIR / "track_a_shap_diagnostic.csv")
+new_cells.append(code("""shap_df = pd.read_csv(TABLES_DIR / "classical_ml_shap_top_features_per_emotion_dimension.csv")
 family_share = shap_df[shap_df.feature.str.startswith("__family_share__")].copy()
 family_share["family"] = family_share.feature.str.replace("__family_share__", "", regex=False)
 display(family_share.pivot(index="task", columns="family", values="mean_abs_shap").style.format("{:.1%}"))
