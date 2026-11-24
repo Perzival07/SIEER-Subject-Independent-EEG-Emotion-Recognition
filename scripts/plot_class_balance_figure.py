@@ -1,7 +1,7 @@
 """Publication-quality redraw of the class-balance figure (Figure 1).
 
 Reads labels from processed_cache/deap_windows_4s_32subj_v2.npz and writes
-results/figures/class_balance.{png,pdf}.
+results/figures/class_distribution_low_vs_high_per_emotion_dimension.{png,pdf}.
 """
 from pathlib import Path
 

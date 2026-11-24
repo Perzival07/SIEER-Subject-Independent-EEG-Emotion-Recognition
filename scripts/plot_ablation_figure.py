@@ -1,7 +1,7 @@
 """Publication-quality redraw of the feature-set ablation figure (Figure 3).
 
 Reads results/tables/classical_ml_feature_set_ablation_results.csv and writes
-results/figures/track_a_ablation_auc.{png,pdf}.
+results/figures/classical_ml_feature_set_ablation_roc_auc.{png,pdf}.
 """
 from pathlib import Path
 

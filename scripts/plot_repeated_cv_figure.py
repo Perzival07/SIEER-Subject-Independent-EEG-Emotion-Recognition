@@ -1,7 +1,7 @@
 """Publication-quality redraw of the repeated GroupKFold CI figure (Figure 2).
 
 Reads results/tables/classical_ml_repeated_groupkfold_results_with_95ci.csv and writes
-results/figures/track_a_repeated_cv_auc_ci.{png,pdf}.
+results/figures/classical_ml_repeated_groupkfold_roc_auc_95ci.{png,pdf}.
 """
 from pathlib import Path
 
