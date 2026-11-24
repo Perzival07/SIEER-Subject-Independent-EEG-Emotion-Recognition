@@ -150,7 +150,7 @@ for ax, task in zip(axes, TASK_ORDER):
     if task == TASK_ORDER[0]:
         ax.legend(fontsize=8)
 plt.tight_layout()
-fig.savefig(FIGURES_DIR / "classical_ml_zero_shot_vs_calibrated_roc_auc_per_subject.png", dpi=150, bbox_inches="tight")
+fig.savefig(FIGURES_DIR / "classical_ml_zero_shot_vs_calibrated_by_subject_roc_auc.png", dpi=150, bbox_inches="tight")
 plt.show()
 """))
 

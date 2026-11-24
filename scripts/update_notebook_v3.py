@@ -100,7 +100,7 @@ ax.set_xticks(range(len(sig))); ax.set_xticklabels(sig.task)
 ax.set_ylabel("ROC AUC"); ax.legend()
 ax.set_title("Observed AUC vs. label-permutation null distribution (Full features, LogisticRegression)")
 plt.tight_layout()
-fig.savefig(FIGURES_DIR / "classical_ml_label_permutation_test_observed_vs_null_roc_auc.png", dpi=150, bbox_inches="tight")
+fig.savefig(FIGURES_DIR / "classical_ml_permutation_test_vs_null_roc_auc.png", dpi=150, bbox_inches="tight")
 plt.show()
 
 print("Per-task verdict (alpha=0.05):")

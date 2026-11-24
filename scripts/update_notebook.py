@@ -226,7 +226,7 @@ repeated subject-independent 70/15/15 splits (different seeds) for both window v
 all 4 architectures, all 4 tasks = 2 x 4 x 4 x 5 = 160 training runs
 (`scripts/track_b_repeated.py`, ~87 min on this machine's RTX 3070 Ti)."""))
 
-new_cells.append(code("""overlap_cmp = pd.read_csv(TABLES_DIR / "deep_learning_overlapping_vs_nonoverlapping_windows_results.csv")
+new_cells.append(code("""overlap_cmp = pd.read_csv(TABLES_DIR / "deep_learning_overlap_vs_nonoverlap_windows_results.csv")
 display(overlap_cmp.sort_values(["task", "model", "dataset"])
         .style.format({c: "{:.3f}" for c in overlap_cmp.columns if "mean" in c or "std" in c}))
 
@@ -245,7 +245,7 @@ for ax, task in zip(axes, TASK_ORDER):
     ax.set_title(task); ax.set_xlabel(""); ax.tick_params(axis="x", rotation=30)
     ax.set_ylabel("ROC AUC (mean +/- std, 5 seeds)" if task == TASK_ORDER[0] else "")
 plt.tight_layout()
-fig.savefig(FIGURES_DIR / "deep_learning_overlapping_vs_nonoverlapping_windows_roc_auc.png", dpi=150, bbox_inches="tight")
+fig.savefig(FIGURES_DIR / "deep_learning_overlap_vs_nonoverlap_windows_roc_auc.png", dpi=150, bbox_inches="tight")
 plt.show()
 
 pivot = overlap_cmp.pivot_table(index=["task", "model"], columns="dataset",

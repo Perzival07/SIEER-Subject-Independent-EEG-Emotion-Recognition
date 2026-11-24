@@ -164,12 +164,12 @@ the majority-class rate. Chance is AUC = 0.5 on every task.
 | 8 | Discussion | -- |
 | 9 | Richer Track A features and the feature-set ablation | `classical_ml_feature_set_ablation_roc_auc.png` |
 | 10 | Track A repeated and nested GroupKFold | `classical_ml_repeated_groupkfold_roc_auc_95ci.png` |
-| 11 | Track B with 50%-overlapping windows and repeated splits | `deep_learning_overlapping_vs_nonoverlapping_windows_roc_auc.png` |
+| 11 | Track B with 50%-overlapping windows and repeated splits | `deep_learning_overlap_vs_nonoverlap_windows_roc_auc.png` |
 | 12 | Cross-corpus validation (DEAP -> SEED-IV) | `cross_corpus_deap_to_seediv_accuracy_and_roc_auc.png` |
 | 13 | Updated discussion (Sections 9-12) | -- |
 | 14 | Label-cleanup ablation | `classical_ml_label_binarization_strategies_roc_auc.png` |
-| 15 | Per-subject calibration (personalisation) | `classical_ml_zero_shot_vs_calibrated_roc_auc_per_subject.png` |
-| 16 | Literature-driven interventions: permutation test (16.1), CORAL (16.2), DANN (16.3), summary (16.4) | `classical_ml_label_permutation_test_observed_vs_null_roc_auc.png`, `classical_ml_coral_domain_alignment_roc_auc.png`, `deep_learning_domain_adversarial_dann_roc_auc.png` |
+| 15 | Per-subject calibration (personalisation) | `classical_ml_zero_shot_vs_calibrated_by_subject_roc_auc.png` |
+| 16 | Literature-driven interventions: permutation test (16.1), CORAL (16.2), DANN (16.3), summary (16.4) | `classical_ml_permutation_test_vs_null_roc_auc.png`, `classical_ml_coral_domain_alignment_roc_auc.png`, `deep_learning_domain_adversarial_dann_roc_auc.png` |
 | 17 | Five deferred literature techniques: Euclidean Alignment (17.1), SSL pretraining (17.2), AUC-margin loss (17.3), AdaBN (17.4), SHAP (17.5), summary (17.6) | `classical_ml_euclidean_alignment_roc_auc.png`, `deep_learning_self_supervised_pretraining_roc_auc.png`, `deep_learning_auc_maximization_loss_roc_auc.png`, `deep_learning_test_time_adaptation_adabn_roc_auc.png` |
 | 18 | Does CORAL stack on top of Euclidean Alignment? | `classical_ml_euclidean_alignment_plus_coral_roc_auc.png` |
 
@@ -209,7 +209,7 @@ writes to `results/tables/` and/or `results/figures/`.
 
 | Script | Question it answers | Output table |
 |---|---|---|
-| `track_b_repeated.py` | Do 50%-overlapping windows help, measured over 5 seeds instead of one split? | `deep_learning_overlapping_vs_nonoverlapping_windows_results.csv` |
+| `track_b_repeated.py` | Do 50%-overlapping windows help, measured over 5 seeds instead of one split? | `deep_learning_overlap_vs_nonoverlap_windows_results.csv` |
 | `track_b_domain_adversarial.py` | Does subject-adversarial (DANN, gradient-reversal) training help EEGNet? | `deep_learning_domain_adversarial_dann_results.csv` |
 | `track_b_ssl_pretrain.py` | Does self-supervised pretraining of EEGNet's encoder help? | `deep_learning_self_supervised_pretraining_results.csv` |
 | `track_b_auc_maximization.py` | Does training directly on a pairwise AUC-margin loss help? | `deep_learning_auc_maximization_loss_results.csv` |
@@ -290,7 +290,7 @@ Regression).
 
 ### Robustness checks on Track B (Section 11)
 
-**`deep_learning_overlapping_vs_nonoverlapping_windows_roc_auc.png`**
+**`deep_learning_overlap_vs_nonoverlap_windows_roc_auc.png`**
 ROC-AUC (mean +/- std over 5 seeds) for each deep model trained on
 non-overlapping 4-second windows (blue) vs. 50%-overlapping windows (orange),
 one panel per task. Overlap doubles the training windows but moves mean AUC
@@ -314,7 +314,7 @@ ROC-AUC for three ways of binarising SAM ratings -- `raw_threshold` (rating
 Per-subject z-scoring gives the most consistent small gain (mean AUC 0.483 ->
 0.514), but nothing escapes the near-chance band.
 
-**`classical_ml_zero_shot_vs_calibrated_roc_auc_per_subject.png`**
+**`classical_ml_zero_shot_vs_calibrated_by_subject_roc_auc.png`**
 Slope plot, one line per held-out subject: ROC-AUC of an XGBoost model trained
 on the other 31 subjects (zero-shot, blue) vs. the same model after
 warm-start boosting on 8 of the held-out subject's own 40 trials (calibrated,
@@ -324,7 +324,7 @@ set are left out of the calibrated arm.
 
 ### Literature-driven interventions (Sections 16-18)
 
-**`classical_ml_label_permutation_test_observed_vs_null_roc_auc.png`**
+**`classical_ml_permutation_test_vs_null_roc_auc.png`**
 For each task, the observed ROC-AUC with the real labels (orange) against the
 mean +/- SD of a null distribution built from 300 within-subject trial-level
 label shuffles (grey), using Logistic Regression on the Full feature set.
@@ -430,7 +430,7 @@ columns `train_time_s, accuracy, f1_macro, precision, recall, roc_auc`.
 
 | File | Rows | Contents and columns |
 |---|---|---|
-| `deep_learning_overlapping_vs_nonoverlapping_windows_results.csv` | 32 (2 datasets x 4 models x 4 tasks) | All four deep models over 5 seeds (`n_seeds`). `dataset` = `non_overlap` (4-second stride) or `overlap50` (2-second stride); `*_mean/_std` across seeds; `train_time_s_mean`. |
+| `deep_learning_overlap_vs_nonoverlap_windows_results.csv` | 32 (2 datasets x 4 models x 4 tasks) | All four deep models over 5 seeds (`n_seeds`). `dataset` = `non_overlap` (4-second stride) or `overlap50` (2-second stride); `*_mean/_std` across seeds; `train_time_s_mean`. |
 | `deep_learning_domain_adversarial_dann_results.csv` | 8 | `condition` = `baseline` or `dann`. |
 | `deep_learning_self_supervised_pretraining_results.csv` | 8 | `condition` = `scratch` or `ssl_pretrained`. |
 | `deep_learning_auc_maximization_loss_results.csv` | 8 | `condition` = `ce_baseline` (cross-entropy) or `auc_max` (AUC-margin loss). |

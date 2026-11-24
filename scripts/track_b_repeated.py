@@ -190,6 +190,6 @@ if __name__ == "__main__":
     for variant_name, path in DATASETS.items():
         all_rows.append(run_dataset(variant_name, path))
     results = pd.concat(all_rows, ignore_index=True)
-    results.to_csv(TABLES_DIR / "deep_learning_overlapping_vs_nonoverlapping_windows_results.csv", index=False)
+    results.to_csv(TABLES_DIR / "deep_learning_overlap_vs_nonoverlap_windows_results.csv", index=False)
     print(f"\nDone in {(time.time()-t0)/60:.1f} min. "
-          f"Saved to {TABLES_DIR / 'deep_learning_overlapping_vs_nonoverlapping_windows_results.csv'}")
+          f"Saved to {TABLES_DIR / 'deep_learning_overlap_vs_nonoverlap_windows_results.csv'}")
